@@ -498,8 +498,9 @@ function UserDashboard({ currentUser }) {
     </div>
   );
 }
+
 /* =========================================
-   INSTANT STAFF AVAILABILITY VIEW (SYNCED)
+   INSTANT STAFF AVAILABILITY VIEW (FULLY SYNCED)
    ========================================= */
 function ManagerInstantAvailabilityView({ department, location }) {
   const [currentWeekStart, setCurrentWeekStart] = useState(getStartOfWeek(new Date()));
@@ -533,23 +534,23 @@ function ManagerInstantAvailabilityView({ department, location }) {
     const weekStartStr = currentWeekStart.toISOString().split('T')[0];
 
     try {
-      // 1. Fetch all registered user profiles
+      // 1. Fetch profiles cleanly without strict role/dept blockers
       const { data: profiles, error: pErr } = await supabase
         .from('profiles')
         .select('id, full_name, name, email, department, role');
 
       if (pErr) throw pErr;
 
-      // Filter out system admins locally
+      // Filter out admins
       let activeStaff = (profiles || []).filter(
         (p) => String(p.role || '').toLowerCase() !== 'admin'
       );
 
-      // Soft department filtering (case-insensitive & fallback for unassigned staff)
+      // Department matching with fallback for unassigned staff
       if (department && department !== 'All Departments' && department !== 'All Staff') {
         const targetDept = department.trim().toLowerCase();
         activeStaff = activeStaff.filter((p) => {
-          if (!p.department) return true; // Include unassigned staff by default
+          if (!p.department) return true;
           return p.department.trim().toLowerCase().includes(targetDept);
         });
       }
@@ -574,7 +575,7 @@ function ManagerInstantAvailabilityView({ department, location }) {
         }
       });
 
-      // 3. Map availability preferences directly onto employee profiles
+      // 3. Map availability directly onto employee profiles
       const processed = activeStaff.map((staff) => {
         const pref = availMap[staff.id];
         const isAvail = pref ? pref.isAvailable : true;
@@ -737,6 +738,7 @@ function ManagerInstantAvailabilityView({ department, location }) {
     </div>
   );
 }
+
 // Pending Shift Offers Component with Day Name Display
 function PendingOffersView({ user }) {
   const [shiftOffers, setShiftOffers] = useState([]);
