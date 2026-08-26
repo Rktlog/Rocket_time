@@ -83,22 +83,22 @@ export default function MyTimesheet({ user }) {
     <div style={cardStyle}>
       {/* WEEK TOGGLE NAVIGATION HEADER */}
       <div style={weekNavHeaderStyle}>
-        <button onClick={() => changeWeek(-1)} style={weekNavBtnStyle}>◀ Prev Week</button>
+        <button onClick={() => changeWeek(-1)} style={weekNavBtnStyle}>◀ Prev</button>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>
-            Week of {currentWeekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+          <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#0f172a' }}>
+            Week: {currentWeekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
           </div>
           <button onClick={resetToCurrentWeek} style={todayBtnStyle}>Jump to Current Week</button>
         </div>
-        <button onClick={() => changeWeek(1)} style={weekNavBtnStyle}>Next Week ▶</button>
+        <button onClick={() => changeWeek(1)} style={weekNavBtnStyle}>Next ▶</button>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#0f172a' }}>
             📋 Completed Timesheet History
           </h2>
-          <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#64748b' }}>
+          <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#64748b' }}>
             Weekly Paid Hours Total: <strong style={{ color: '#2563eb' }}>{totalWeeklyHours} hours</strong>
           </p>
         </div>
@@ -106,64 +106,68 @@ export default function MyTimesheet({ user }) {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '32px 0', color: '#94a3b8' }}>Loading timesheet logs...</div>
+        <div style={{ textAlign: 'center', padding: '24px 0', color: '#94a3b8', fontSize: '12px' }}>Loading timesheet logs...</div>
       ) : logs.length === 0 ? (
         <div style={emptyBoxStyle}>
-          <p style={{ margin: 0, fontWeight: 'bold', color: '#334155' }}>No shift logs recorded for this week</p>
-          <p style={{ margin: '4px 0 0 0', color: '#94a3b8', fontSize: '12px' }}>Clock out from a shift to log your timesheet!</p>
+          <p style={{ margin: 0, fontWeight: 'bold', color: '#334155', fontSize: '13px' }}>No shift logs recorded for this week</p>
+          <p style={{ margin: '4px 0 0 0', color: '#94a3b8', fontSize: '11px' }}>Clock out from a shift to log your timesheet!</p>
         </div>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-              <th style={{ padding: '10px' }}>Shift Date</th>
-              <th style={{ padding: '10px' }}>🟢 Clock In</th>
-              <th style={{ padding: '10px' }}>⏹ Clock Out</th>
-              <th style={{ padding: '10px' }}>Shift Details</th>
-              <th style={{ padding: '10px' }}>Bonus Mins</th>
-              <th style={{ padding: '10px', textAlign: 'right' }}>Total Paid Hours</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map((log) => {
-              const clockInDate = log.clock_in ? new Date(log.clock_in) : null;
-              const clockOutDate = log.clock_out ? new Date(log.clock_out) : null;
+        /* RESPONSIVE SCROLLABLE TABLE WRAPPER */
+        <div style={responsiveTableWrapper}>
+          <table style={{ width: '100%', minWidth: '520px', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                <th style={{ padding: '8px' }}>Shift Date</th>
+                <th style={{ padding: '8px' }}>🟢 Clock In</th>
+                <th style={{ padding: '8px' }}>⏹ Clock Out</th>
+                <th style={{ padding: '8px' }}>Shift Details</th>
+                <th style={{ padding: '8px' }}>Bonus Mins</th>
+                <th style={{ padding: '8px', textAlign: 'right' }}>Total Paid Hours</th>
+              </tr>
+            </thead>
+            <tbody>
+              {logs.map((log) => {
+                const clockInDate = log.clock_in ? new Date(log.clock_in) : null;
+                const clockOutDate = log.clock_out ? new Date(log.clock_out) : null;
 
-              return (
-                <tr key={log.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px', fontWeight: 'bold', color: '#0f172a' }}>
-                    {clockInDate ? clockInDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : 'N/A'}
-                  </td>
-                  <td style={{ padding: '10px', color: '#15803d', fontWeight: 'bold' }}>
-                    {clockInDate ? clockInDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
-                  </td>
-                  <td style={{ padding: '10px', color: '#b91c1c', fontWeight: 'bold' }}>
-                    {clockOutDate ? clockOutDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Active / In Progress'}
-                  </td>
-                  <td style={{ padding: '10px', color: '#64748b' }}>
-                    {log.no_break ? '☕ No Break Waived' : 'Standard Break'} 
-                    {log.container_type && log.container_type !== 'none' ? ` | 📦 ${log.container_type}` : ''}
-                  </td>
-                  <td style={{ padding: '10px', color: '#16a34a', fontWeight: 'bold' }}>
-                    +{log.bonus_minutes_added || 0}m
-                  </td>
-                  <td style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold', color: '#2563eb' }}>
-                    {log.total_hours || '0.00'}h
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                return (
+                  <tr key={log.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#0f172a', whiteSpace: 'nowrap' }}>
+                      {clockInDate ? clockInDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : 'N/A'}
+                    </td>
+                    <td style={{ padding: '8px', color: '#15803d', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                      {clockInDate ? clockInDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                    </td>
+                    <td style={{ padding: '8px', color: '#b91c1c', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                      {clockOutDate ? clockOutDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Active / In Progress'}
+                    </td>
+                    <td style={{ padding: '8px', color: '#64748b' }}>
+                      {log.no_break ? '☕ No Break Waived' : 'Standard Break'} 
+                      {log.container_type && log.container_type !== 'none' ? ` | 📦 ${log.container_type}` : ''}
+                    </td>
+                    <td style={{ padding: '8px', color: '#16a34a', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                      +{log.bonus_minutes_added || 0}m
+                    </td>
+                    <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', color: '#2563eb', whiteSpace: 'nowrap' }}>
+                      {log.total_hours || '0.00'}h
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
 }
 
 // Inline Styles
-const cardStyle = { backgroundColor: '#ffffff', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' };
-const weekNavHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: '#f1f5f9', borderRadius: '10px', marginBottom: '20px', border: '1px solid #cbd5e1' };
-const weekNavBtnStyle = { padding: '8px 14px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', color: '#334155' };
-const todayBtnStyle = { background: 'none', border: 'none', color: '#2563eb', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline', marginTop: '2px' };
-const emptyBoxStyle = { textAlign: 'center', padding: '40px 20px', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1' };
-const refreshBtnStyle = { background: 'none', border: 'none', color: '#2563eb', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' };
+const cardStyle = { backgroundColor: '#ffffff', padding: '16px', borderRadius: '14px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', boxSizing: 'border-box' };
+const weekNavHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: '#f1f5f9', borderRadius: '8px', marginBottom: '14px', border: '1px solid #cbd5e1', flexWrap: 'wrap', gap: '6px' };
+const weekNavBtnStyle = { padding: '5px 10px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', color: '#334155' };
+const todayBtnStyle = { background: 'none', border: 'none', color: '#2563eb', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline', marginTop: '2px' };
+const emptyBoxStyle = { textAlign: 'center', padding: '24px 12px', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1' };
+const refreshBtnStyle = { background: 'none', border: 'none', color: '#2563eb', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' };
+const responsiveTableWrapper = { width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' };

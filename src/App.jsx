@@ -500,7 +500,7 @@ function UserDashboard({ currentUser }) {
 }
 
 /* =========================================
-   INSTANT STAFF AVAILABILITY VIEW (ALWAYS SHOWS DEPT STAFF)
+   INSTANT STAFF AVAILABILITY VIEW (SYNCED WITH STAFF UPDATES)
    ========================================= */
 function ManagerInstantAvailabilityView({ department, location }) {
   const [currentWeekStart, setCurrentWeekStart] = useState(getStartOfWeek(new Date()));
@@ -531,10 +531,12 @@ function ManagerInstantAvailabilityView({ department, location }) {
 
   const fetchAvailableStaff = async () => {
     setLoading(true);
+    // Format date as YYYY-MM-DD
     const weekStartStr = currentWeekStart.toISOString().split('T')[0];
 
     try {
-      let profileQuery = supabase.from('profiles').select('*').neq('role', 'admin');
+      // 1. Fetch active department profiles
+      let profileQuery = supabase.from('profiles').select('id, full_name, name, email, department').neq('role', 'admin');
       
       if (department && department !== 'All Departments') {
         profileQuery = profileQuery.or(`department.ilike.%${department.trim()}%,department.is.null`);
@@ -543,24 +545,32 @@ function ManagerInstantAvailabilityView({ department, location }) {
       const { data: profiles, error: pErr } = await profileQuery;
       if (pErr) throw pErr;
 
-      const { data: availData } = await supabase
+      // 2. Fetch staff availability records for the targeted week & day
+      const { data: availData, error: aErr } = await supabase
         .from('weekly_availability')
         .select('*')
         .eq('day', selectedDay);
 
+      if (aErr) console.warn('Availability fetch warning:', aErr.message);
+
+      // Create a map by user_id
       const availMap = {};
       (availData || []).forEach(a => {
-        if (a.week_start === weekStartStr || !a.week_start) {
+        // Match records by user_id and week_start (or fallback matching)
+        if (!a.week_start || a.week_start === weekStartStr) {
           availMap[a.user_id] = {
-            isAvailable: Boolean(a.is_available),
+            isAvailable: a.is_available ?? true,
             startTime: a.start_time ? String(a.start_time).slice(0, 5) : '08:30',
             endTime: a.end_time ? String(a.end_time).slice(0, 5) : '16:30'
           };
         }
       });
 
+      // 3. Map availability directly onto staff profiles
       const processed = (profiles || []).map(staff => {
         const pref = availMap[staff.id];
+        
+        // If staff updated their record, use it; otherwise default to available
         const isAvail = pref ? pref.isAvailable : true;
         const timing = pref ? `${pref.startTime} - ${pref.endTime}` : '08:30 - 16:30';
 
@@ -616,17 +626,17 @@ function ManagerInstantAvailabilityView({ department, location }) {
 
   return (
     <div>
-      <h2 style={viewHeadingStyle}>⏱️ Instant Staff Availability & Shift Offers</h2>
-      <p style={subTextStyle}>Select target week and day to inspect availability and send instant shift invitations.</p>
+      <h2 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>⏱️ Instant Staff Availability & Shift Offers</h2>
+      <p style={{ color: '#64748b', fontSize: '12px', marginTop: '2px', marginBottom: '16px' }}>Select target week and day to inspect staff availability and send shift offers.</p>
 
-      {msg && <div style={{ ...successBannerStyle, marginBottom: '16px' }}>{msg}</div>}
+      {msg && <div style={{ padding: '10px 12px', backgroundColor: '#dcfce7', color: '#15803d', borderRadius: '8px', fontSize: '12px', fontWeight: '500', marginBottom: '14px' }}>{msg}</div>}
 
-      <div style={weekNavHeaderStyle}>
-        <button onClick={() => changeWeek(-1)} style={weekNavBtnStyle}>◀ Prev</button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', backgroundColor: '#f1f5f9', borderRadius: '10px', marginBottom: '14px', border: '1px solid #cbd5e1', flexWrap: 'wrap', gap: '6px' }}>
+        <button onClick={() => changeWeek(-1)} style={{ padding: '5px 10px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', color: '#334155' }}>◀ Prev</button>
         <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#0f172a', textAlign: 'center' }}>
           {currentWeekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
         </div>
-        <button onClick={() => changeWeek(1)} style={weekNavBtnStyle}>Next ▶</button>
+        <button onClick={() => changeWeek(1)} style={{ padding: '5px 10px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', color: '#334155' }}>Next ▶</button>
       </div>
 
       <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '4px' }}>
@@ -656,7 +666,7 @@ function ManagerInstantAvailabilityView({ department, location }) {
         })}
       </div>
 
-      <div style={cardStyle}>
+      <div style={{ backgroundColor: '#f8fafc', padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
         <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#0f172a' }}>
           Availability for <strong>{selectedDay}</strong> ({department || 'All Staff'})
         </h4>
@@ -666,7 +676,7 @@ function ManagerInstantAvailabilityView({ department, location }) {
         ) : staffRoster.length === 0 ? (
           <div style={{ padding: '12px', color: '#94a3b8', fontSize: '12px' }}>No employees registered in the system.</div>
         ) : (
-          <div style={responsiveTableWrapper}>
+          <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <table style={{ width: '100%', minWidth: '500px', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
@@ -688,7 +698,7 @@ function ManagerInstantAvailabilityView({ department, location }) {
                         </span>
                       ) : (
                         <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold', backgroundColor: '#fef2f2', color: '#dc2626', whiteSpace: 'nowrap' }}>
-                          🔴 Unavailable
+                          🔴 Marked Unavailable
                         </span>
                       )}
                     </td>

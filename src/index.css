@@ -1,3 +1,65 @@
+/* src/index.css */
+
+/* Prevent page horizontal scrolling */
+html, body {
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* Make images and media fluid */
+img, svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Allow data tables to scroll horizontally on small screens */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile Layout Overrides (< 768px) */
+@media (max-width: 768px) {
+  /* Stack sidebars vertically on top of panels */
+  div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  /* Reduce main container margins and padding */
+  main {
+    padding: 12px !important;
+  }
+
+  /* Make header stack stacked vertically */
+  header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    padding: 12px 16px !important;
+  }
+
+  /* Convert sidebar buttons to horizontal scroll bar */
+  aside {
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    padding-bottom: 8px !important;
+  }
+
+  aside button {
+    flex: 0 0 auto !important;
+  }
+
+  /* Make modal content fit mobile screens */
+  div[style*="position: fixed"] > div {
+    width: 95% !important;
+    padding: 16px !important;
+  }
+}
+
 :root {
   --text: #6b6375;
   --text-h: #08060d;
