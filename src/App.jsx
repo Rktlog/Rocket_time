@@ -529,34 +529,41 @@ function ManagerInstantAvailabilityView({ department, location }) {
     fetchAvailableStaff();
   }, [department, currentWeekStart, selectedDay]);
 
-  const fetchAvailableStaff = async () => {
+ const fetchAvailableStaff = async () => {
     setLoading(true);
-    // Format date as YYYY-MM-DD
     const weekStartStr = currentWeekStart.toISOString().split('T')[0];
 
     try {
-      // 1. Fetch active department profiles
-      let profileQuery = supabase.from('profiles').select('id, full_name, name, email, department').neq('role', 'admin');
-      
-      if (department && department !== 'All Departments') {
-        profileQuery = profileQuery.or(`department.ilike.%${department.trim()}%,department.is.null`);
-      }
-      
-      const { data: profiles, error: pErr } = await profileQuery;
+      // 1. Fetch profiles cleanly without strict role/dept blockers
+      let { data: profiles, error: pErr } = await supabase
+        .from('profiles')
+        .select('id, full_name, name, email, department, role');
+
       if (pErr) throw pErr;
 
-      // 2. Fetch staff availability records for the targeted week & day
+      // Filter out admins locally to avoid query syntax issues
+      let activeStaff = (profiles || []).filter(p => String(p.role).toLowerCase() !== 'admin');
+
+      // Filter by department if a specific non-global department is selected
+      if (department && department !== 'All Departments' && department !== 'All Staff') {
+        const targetDept = department.trim().toLowerCase();
+        activeStaff = activeStaff.filter(p => {
+          if (!p.department) return true; // Include unassigned staff as fallbacks
+          return p.department.trim().toLowerCase().includes(targetDept);
+        });
+      }
+
+      // 2. Fetch weekly availability logs for the chosen day
       const { data: availData, error: aErr } = await supabase
         .from('weekly_availability')
         .select('*')
         .eq('day', selectedDay);
 
-      if (aErr) console.warn('Availability fetch warning:', aErr.message);
+      if (aErr) console.warn('Availability query warning:', aErr.message);
 
-      // Create a map by user_id
+      // Create lookup map by user_id
       const availMap = {};
       (availData || []).forEach(a => {
-        // Match records by user_id and week_start (or fallback matching)
         if (!a.week_start || a.week_start === weekStartStr) {
           availMap[a.user_id] = {
             isAvailable: a.is_available ?? true,
@@ -566,11 +573,9 @@ function ManagerInstantAvailabilityView({ department, location }) {
         }
       });
 
-      // 3. Map availability directly onto staff profiles
-      const processed = (profiles || []).map(staff => {
+      // 3. Map availability directly onto the staff list
+      const processed = activeStaff.map(staff => {
         const pref = availMap[staff.id];
-        
-        // If staff updated their record, use it; otherwise default to available
         const isAvail = pref ? pref.isAvailable : true;
         const timing = pref ? `${pref.startTime} - ${pref.endTime}` : '08:30 - 16:30';
 
