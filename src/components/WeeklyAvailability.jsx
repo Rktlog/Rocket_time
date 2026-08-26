@@ -1,3 +1,4 @@
+// src/components/WeeklyAvailability.jsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -9,6 +10,14 @@ export default function WeeklyAvailability({ user }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState({ text: '', isError: false });
+
+  // Timezone-safe local YYYY-MM-DD date formatter
+  function formatLocalDate(d) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
 
   function getStartOfWeek(d) {
     const date = new Date(d);
@@ -32,12 +41,12 @@ export default function WeeklyAvailability({ user }) {
   const fetchAvailability = async () => {
     setLoading(true);
     try {
-      const weekStartStr = currentWeekStart.toISOString().split('T')[0];
+      const weekStartStr = formatLocalDate(currentWeekStart);
       const { data, error } = await supabase
         .from('weekly_availability')
         .select('*')
         .eq('user_id', user.id)
-        .eq('week_start', weekStartStr);
+        .or(`week_start.eq.${weekStartStr},week_start.is.null`);
 
       if (error) throw error;
 
@@ -106,13 +115,12 @@ export default function WeeklyAvailability({ user }) {
     setSaving(true);
     setMsg({ text: '', isError: false });
 
-    const weekStartStr = currentWeekStart.toISOString().split('T')[0];
+    const weekStartStr = formatLocalDate(currentWeekStart);
 
     try {
       const recordsToUpsert = DAYS.map(day => {
         const item = availability[day] || { isAvailable: true, startTime: '08:30', endTime: '16:30' };
         
-        // Format time values safely for Postgres TIME columns
         const cleanStart = item.startTime.length === 5 ? `${item.startTime}:00` : item.startTime;
         const cleanEnd = item.endTime.length === 5 ? `${item.endTime}:00` : item.endTime;
 
@@ -151,7 +159,7 @@ export default function WeeklyAvailability({ user }) {
 
     const nextWeekStart = new Date(currentWeekStart);
     nextWeekStart.setDate(nextWeekStart.getDate() + 7);
-    const nextWeekStartStr = nextWeekStart.toISOString().split('T')[0];
+    const nextWeekStartStr = formatLocalDate(nextWeekStart);
 
     try {
       const clonedRecords = DAYS.map(day => {
