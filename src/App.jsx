@@ -141,7 +141,7 @@ export default function App() {
     <div style={layoutStyle}>
       {/* HEADER BAR */}
       <header style={headerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <div style={logoStyle}>🚀 Rocket Time</div>
           {currentUser && (
             <span style={badgeStyle(currentUser.role)}>
@@ -151,7 +151,7 @@ export default function App() {
         </div>
 
         {currentUser && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <div style={{ fontSize: '13px', color: '#64748b' }}>
               Logged in as: <strong>{currentUser.name}</strong> ({currentUser.department})
             </div>
@@ -325,11 +325,11 @@ function AdminDashboard({
     <div style={dashboardGrid}>
       <aside style={sidebarStyle}>
         <h3 style={sidebarHeader}>ADMIN WORKSPACE</h3>
-        <button onClick={() => setActiveTab('users')} style={navBtn(activeTab === 'users')}>👥 Users & Employee Profiles</button>
+        <button onClick={() => setActiveTab('users')} style={navBtn(activeTab === 'users')}>👥 Users & Profiles</button>
         <button onClick={() => setActiveTab('sites')} style={navBtn(activeTab === 'sites')}>📍 Sites & Depts</button>
         <button onClick={() => setActiveTab('invites')} style={navBtn(activeTab === 'invites')}>✉️ Send Invites</button>
-        <button onClick={() => setActiveTab('payroll')} style={navBtn(activeTab === 'payroll')}>📊 Global Payroll & Edits</button>
-        <button onClick={() => setActiveTab('reports')} style={navBtn(activeTab === 'reports')}>📧 Automated Reports</button>
+        <button onClick={() => setActiveTab('payroll')} style={navBtn(activeTab === 'payroll')}>📊 Global Payroll</button>
+        <button onClick={() => setActiveTab('reports')} style={navBtn(activeTab === 'reports')}>📧 Reports</button>
         <button onClick={() => setActiveTab('system')} style={navBtn(activeTab === 'system')}>⚙️ Master Settings</button>
       </aside>
 
@@ -405,12 +405,12 @@ function ManagerDashboard({
         <h3 style={sidebarHeader}>{currentUser.department} MANAGER</h3>
         <button onClick={() => setActiveTab('timeclock')} style={navBtn(activeTab === 'timeclock')}>⏱️ My Time Clock</button>
         <button onClick={() => setActiveTab('mytimesheet')} style={navBtn(activeTab === 'mytimesheet')}>📋 My Timesheet</button>
-        <button onClick={() => setActiveTab('users')} style={navBtn(activeTab === 'users')}>👥 Dept Staff Roster</button>
+        <button onClick={() => setActiveTab('users')} style={navBtn(activeTab === 'users')}>👥 Dept Staff</button>
         <button onClick={() => setActiveTab('availability')} style={navBtn(activeTab === 'availability')}>⏱️ Staff Availability</button>
         <button onClick={() => setActiveTab('rostering')} style={navBtn(activeTab === 'rostering')}>📅 Weekly Rostering</button>
         <button onClick={() => setActiveTab('invites')} style={navBtn(activeTab === 'invites')}>✉️ Invite Staff</button>
-        <button onClick={() => setActiveTab('logs')} style={navBtn(activeTab === 'logs')}>🏢 Dept Staff Time Logs</button>
-        <button onClick={() => setActiveTab('settings')} style={navBtn(activeTab === 'settings')}>⚙️ My Account Settings</button>
+        <button onClick={() => setActiveTab('logs')} style={navBtn(activeTab === 'logs')}>🏢 Dept Time Logs</button>
+        <button onClick={() => setActiveTab('settings')} style={navBtn(activeTab === 'settings')}>⚙️ Account Settings</button>
       </aside>
 
       <div style={panelStyle}>
@@ -486,7 +486,7 @@ function UserDashboard({ currentUser }) {
         <button onClick={() => setActiveTab('roster')} style={navBtn(activeTab === 'roster')}>📅 Shift Roster</button>
         <button onClick={() => setActiveTab('availability')} style={navBtn(activeTab === 'availability')}>⏱️ My Availability</button>
         <button onClick={() => setActiveTab('timesheet')} style={navBtn(activeTab === 'timesheet')}>📋 My Timesheet</button>
-        <button onClick={() => setActiveTab('settings')} style={navBtn(activeTab === 'settings')}>⚙️ My Account Settings</button>
+        <button onClick={() => setActiveTab('settings')} style={navBtn(activeTab === 'settings')}>⚙️ Account Settings</button>
       </aside>
 
       <div style={panelStyle}>
@@ -501,9 +501,6 @@ function UserDashboard({ currentUser }) {
   );
 }
 
-/* =========================================
-   STAFF AVAILABILITY VIEW (RELAXED QUERY MATCHING)
-   ========================================= */
 /* =========================================
    INSTANT STAFF AVAILABILITY VIEW (ALWAYS SHOWS DEPT STAFF)
    ========================================= */
@@ -539,7 +536,6 @@ function ManagerInstantAvailabilityView({ department, location }) {
     const weekStartStr = currentWeekStart.toISOString().split('T')[0];
 
     try {
-      // 1. Get ALL active staff profiles (unfiltered by department if department is empty or 'englite')
       let profileQuery = supabase.from('profiles').select('*').neq('role', 'admin');
       
       if (department && department !== 'All Departments') {
@@ -549,7 +545,6 @@ function ManagerInstantAvailabilityView({ department, location }) {
       const { data: profiles, error: pErr } = await profileQuery;
       if (pErr) throw pErr;
 
-      // 2. Fetch any explicit availability logs for selected week & day
       const { data: availData } = await supabase
         .from('weekly_availability')
         .select('*')
@@ -557,7 +552,6 @@ function ManagerInstantAvailabilityView({ department, location }) {
 
       const availMap = {};
       (availData || []).forEach(a => {
-        // Map availability by user_id
         if (a.week_start === weekStartStr || !a.week_start) {
           availMap[a.user_id] = {
             isAvailable: Boolean(a.is_available),
@@ -567,10 +561,9 @@ function ManagerInstantAvailabilityView({ department, location }) {
         }
       });
 
-      // 3. Process every employee - ALWAYS include them in the roster
       const processed = (profiles || []).map(staff => {
         const pref = availMap[staff.id];
-        const isAvail = pref ? pref.isAvailable : true; // Default to Available if no record
+        const isAvail = pref ? pref.isAvailable : true;
         const timing = pref ? `${pref.startTime} - ${pref.endTime}` : '08:30 - 16:30';
 
         return {
@@ -632,13 +625,13 @@ function ManagerInstantAvailabilityView({ department, location }) {
 
       <div style={weekNavHeaderStyle}>
         <button onClick={() => changeWeek(-1)} style={weekNavBtnStyle}>◀ Prev Week</button>
-        <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>
-          Selected Week: {currentWeekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+        <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a', textAlign: 'center' }}>
+          {currentWeekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
         </div>
         <button onClick={() => changeWeek(1)} style={weekNavBtnStyle}>Next Week ▶</button>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', overflowX: 'auto' }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '4px' }}>
         {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, idx) => {
           const dateObj = new Date(currentWeekStart);
           dateObj.setDate(dateObj.getDate() + idx);
@@ -653,6 +646,7 @@ function ManagerInstantAvailabilityView({ department, location }) {
                 fontSize: '13px',
                 fontWeight: 'bold',
                 cursor: 'pointer',
+                flexShrink: 0,
                 backgroundColor: selectedDay === day ? '#2563eb' : '#e2e8f0',
                 color: selectedDay === day ? '#ffffff' : '#334155'
               }}
@@ -674,53 +668,55 @@ function ManagerInstantAvailabilityView({ department, location }) {
         ) : staffRoster.length === 0 ? (
           <div style={{ padding: '12px', color: '#94a3b8' }}>No employees registered in the system.</div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-                <th style={{ padding: '10px' }}>Employee</th>
-                <th style={{ padding: '10px' }}>Email</th>
-                <th style={{ padding: '10px' }}>{selectedDay} Status</th>
-                <th style={{ padding: '10px', textAlign: 'right' }}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {staffRoster.map(staff => (
-                <tr key={staff.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px', fontWeight: 'bold', color: '#0f172a' }}>{staff.full_name || staff.name || 'Unnamed Staff'}</td>
-                  <td style={{ padding: '10px', color: '#64748b' }}>{staff.email}</td>
-                  <td style={{ padding: '10px' }}>
-                    {staff.isAvailable ? (
-                      <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', backgroundColor: '#dcfce7', color: '#15803d' }}>
-                        🟢 Available ({staff.timing})
-                      </span>
-                    ) : (
-                      <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', backgroundColor: '#fef2f2', color: '#dc2626' }}>
-                        🔴 Marked Unavailable
-                      </span>
-                    )}
-                  </td>
-                  <td style={{ padding: '10px', textAlign: 'right' }}>
-                    <button
-                      onClick={() => handleSendInstantOffer(staff)}
-                      disabled={sendingId === staff.id || !staff.isAvailable}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                        cursor: staff.isAvailable ? 'pointer' : 'not-allowed',
-                        backgroundColor: !staff.isAvailable ? '#cbd5e1' : sendingId === staff.id ? '#94a3b8' : '#2563eb',
-                        color: '#ffffff',
-                      }}
-                    >
-                      {!staff.isAvailable ? 'Unavailable' : sendingId === staff.id ? 'Sending...' : 'Offer Shift 🚀'}
-                    </button>
-                  </td>
+          <div style={responsiveTableWrapper}>
+            <table style={{ width: '100%', minWidth: '550px', borderCollapse: 'collapse', fontSize: '14px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                  <th style={{ padding: '10px' }}>Employee</th>
+                  <th style={{ padding: '10px' }}>Email</th>
+                  <th style={{ padding: '10px' }}>{selectedDay} Status</th>
+                  <th style={{ padding: '10px', textAlign: 'right' }}>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {staffRoster.map(staff => (
+                  <tr key={staff.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '10px', fontWeight: 'bold', color: '#0f172a' }}>{staff.full_name || staff.name || 'Unnamed Staff'}</td>
+                    <td style={{ padding: '10px', color: '#64748b' }}>{staff.email}</td>
+                    <td style={{ padding: '10px' }}>
+                      {staff.isAvailable ? (
+                        <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', backgroundColor: '#dcfce7', color: '#15803d' }}>
+                          🟢 Available ({staff.timing})
+                        </span>
+                      ) : (
+                        <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', backgroundColor: '#fef2f2', color: '#dc2626' }}>
+                          🔴 Marked Unavailable
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: '10px', textAlign: 'right' }}>
+                      <button
+                        onClick={() => handleSendInstantOffer(staff)}
+                        disabled={sendingId === staff.id || !staff.isAvailable}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          border: 'none',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          cursor: staff.isAvailable ? 'pointer' : 'not-allowed',
+                          backgroundColor: !staff.isAvailable ? '#cbd5e1' : sendingId === staff.id ? '#94a3b8' : '#2563eb',
+                          color: '#ffffff',
+                        }}
+                      >
+                        {!staff.isAvailable ? 'Unavailable' : sendingId === staff.id ? 'Sending...' : 'Offer Shift 🚀'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
@@ -733,11 +729,8 @@ function PendingOffersView({ user }) {
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState({ text: '', isError: false });
 
-  // Helper to compute and format local day of week and date
   const formatDayAndDate = (dateStr) => {
     if (!dateStr) return { dayName: 'Scheduled Day', formattedDate: '' };
-    
-    // Parse YYYY-MM-DD cleanly into a Date object
     const [year, month, day] = dateStr.split('-').map(Number);
     const dateObj = new Date(year, month - 1, day);
 
@@ -750,7 +743,6 @@ function PendingOffersView({ user }) {
   useEffect(() => {
     let isMounted = true;
     
-    // Safety timeout to ensure loading spinner never hangs indefinitely
     const timer = setTimeout(() => {
       if (isMounted) setLoading(false);
     }, 3000);
@@ -774,7 +766,6 @@ function PendingOffersView({ user }) {
     const cleanEmail = (user.email || '').trim().toLowerCase();
 
     try {
-      // 1. Fetch pending shift_offers
       const { data: offersData, error: offersErr } = await supabase
         .from('shift_offers')
         .select('*')
@@ -783,7 +774,6 @@ function PendingOffersView({ user }) {
 
       if (offersErr) console.warn('shift_offers fetch warning:', offersErr.message);
 
-      // 2. Fetch pending direct shift assignments
       const { data: shiftsData, error: shiftsErr } = await supabase
         .from('shifts')
         .select('*')
@@ -811,7 +801,6 @@ function PendingOffersView({ user }) {
       const targetDate = offer.shift_date || offer.date;
       const cleanEmail = (user.email || '').trim().toLowerCase();
 
-      // 1. Mark offer as Accepted in shift_offers if source is shift_offers
       if (offer.source === 'shift_offers') {
         const { error: offerErr } = await supabase
           .from('shift_offers')
@@ -821,7 +810,6 @@ function PendingOffersView({ user }) {
         if (offerErr) throw offerErr;
       }
 
-      // 2. Safely parse and format ISO timestamps for Postgres
       const rawTime = offer.shift_time || '08:30 - 16:30';
       const [startTimeStr, endTimeStr] = rawTime.includes('-') ? rawTime.split('-') : ['08:30', '16:30'];
       const cleanStart = startTimeStr ? startTimeStr.trim() : '08:30';
@@ -833,7 +821,6 @@ function PendingOffersView({ user }) {
       const startIso = new Date(`${targetDate}T${formattedStart}`).toISOString();
       const endIso = new Date(`${targetDate}T${formattedEnd}`).toISOString();
 
-      // 3. Upsert confirmed shift into main shifts table for roster display
       const { error: shiftErr } = await supabase
         .from('shifts')
         .upsert(
@@ -854,7 +841,6 @@ function PendingOffersView({ user }) {
 
       if (shiftErr) throw shiftErr;
 
-      // 4. Update UI state instantly
       setShiftOffers(prev => prev.filter(o => o.id !== offer.id));
       setMsg({ text: '✅ Shift accepted! It is now live on your roster.', isError: false });
     } catch (err) {
@@ -879,7 +865,6 @@ function PendingOffersView({ user }) {
         if (error) throw error;
       }
 
-      // Remove card from UI state immediately
       setShiftOffers(prev => prev.filter(o => o.id !== offer.id));
       setMsg({ text: '🚫 Shift offer declined.', isError: false });
     } catch (err) {
@@ -897,22 +882,22 @@ function PendingOffersView({ user }) {
   }
 
   return (
-    <div style={{ backgroundColor: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+    <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
         <div>
-          <h3 style={{ margin: 0, fontSize: '20px', color: '#0f172a' }}>📬 Pending Shift Offers</h3>
-          <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>
+          <h3 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>📬 Pending Shift Offers</h3>
+          <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#64748b' }}>
             Review and accept open shifts offered by your department manager.
           </p>
         </div>
-        <span style={{ backgroundColor: '#eff6ff', color: '#2563eb', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>
+        <span style={{ backgroundColor: '#eff6ff', color: '#2563eb', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>
           {shiftOffers.length} {shiftOffers.length === 1 ? 'Available' : 'Available'}
         </span>
       </div>
 
       {msg.text && (
         <div style={{
-          padding: '12px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 'bold', marginBottom: '20px',
+          padding: '12px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 'bold', marginBottom: '16px',
           backgroundColor: msg.isError ? '#fef2f2' : '#f0fdf4', color: msg.isError ? '#991b1b' : '#15803d',
           border: `1px solid ${msg.isError ? '#fca5a5' : '#bbf7d0'}`
         }}>
@@ -921,56 +906,56 @@ function PendingOffersView({ user }) {
       )}
 
       {shiftOffers.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 20px', border: '1px dashed #cbd5e1', borderRadius: '12px', backgroundColor: '#f8fafc' }}>
-          <div style={{ fontSize: '36px', marginBottom: '8px' }}>☕</div>
+        <div style={{ textAlign: 'center', padding: '30px 16px', border: '1px dashed #cbd5e1', borderRadius: '12px', backgroundColor: '#f8fafc' }}>
+          <div style={{ fontSize: '32px', marginBottom: '8px' }}>☕</div>
           <h4 style={{ margin: 0, color: '#334155' }}>No Pending Shift Offers</h4>
-          <p style={{ margin: '4px 0 0 0', color: '#94a3b8', fontSize: '13px' }}>
+          <p style={{ margin: '4px 0 0 0', color: '#94a3b8', fontSize: '12px' }}>
             You're all caught up! New shift invitations will appear here automatically.
           </p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '14px' }}>
           {shiftOffers.map((offer) => {
             const rawDate = offer.shift_date || offer.date;
             const { dayName, formattedDate } = formatDayAndDate(rawDate);
 
             return (
-              <div key={offer.id} style={{ backgroundColor: '#ffffff', padding: '20px', borderRadius: '14px', border: '2px solid #3b82f6', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+              <div key={offer.id} style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '14px', border: '2px solid #3b82f6', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
                   <div>
-                    <div style={{ fontSize: '17px', fontWeight: 'bold', color: '#0f172a' }}>
+                    <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#0f172a' }}>
                       📅 {dayName}
                     </div>
                     <div style={{ fontSize: '12px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
                       {formattedDate || rawDate}
                     </div>
                   </div>
-                  <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold', backgroundColor: '#dbeafe', color: '#1e40af' }}>
-                    PENDING OFFER
+                  <span style={{ padding: '4px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold', backgroundColor: '#dbeafe', color: '#1e40af' }}>
+                    PENDING
                   </span>
                 </div>
 
-                <div style={{ backgroundColor: '#f8fafc', padding: '12px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '14px' }}>
-                  <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Proposed Hours</div>
-                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb', marginTop: '2px' }}>
+                <div style={{ backgroundColor: '#f8fafc', padding: '10px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '12px' }}>
+                  <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Proposed Hours</div>
+                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#2563eb', marginTop: '2px' }}>
                     ⏰ {offer.shift_time || '08:30 - 16:30'}
                   </div>
                 </div>
 
-                <div style={{ fontSize: '12px', color: '#475569', marginBottom: '16px' }}>
+                <div style={{ fontSize: '12px', color: '#475569', marginBottom: '14px' }}>
                   📍 <strong>Location:</strong> Englite Campbellfield
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
                   <button
                     onClick={() => handleAccept(offer)}
-                    style={{ flex: 1, padding: '10px', backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}
+                    style={{ flex: 1, padding: '10px', backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
                   >
-                    ✓ Accept Shift
+                    ✓ Accept
                   </button>
                   <button
                     onClick={() => handleDecline(offer)}
-                    style={{ flex: 1, padding: '10px', backgroundColor: '#ffffff', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}
+                    style={{ flex: 1, padding: '10px', backgroundColor: '#ffffff', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
                   >
                     ✕ Decline
                   </button>
@@ -983,6 +968,7 @@ function PendingOffersView({ user }) {
     </div>
   );
 }
+
 /* =========================================
    ADMIN USER ROLE & PROFILE CONTROL
    ========================================= */
@@ -1068,56 +1054,58 @@ function AdminUserRoleManagementView() {
         ) : filteredUsers.length === 0 ? (
           <div style={{ padding: '20px', color: '#94a3b8' }}>No profile records found.</div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-                <th style={{ padding: '10px' }}>Employee Name</th>
-                <th style={{ padding: '10px' }}>Email</th>
-                <th style={{ padding: '10px' }}>Department</th>
-                <th style={{ padding: '10px' }}>Role</th>
-                <th style={{ padding: '10px', textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.map((u) => {
-                const normRole = String(u.role || 'user').toLowerCase().trim();
-                return (
-                  <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '10px', fontWeight: 'bold', color: '#2563eb', cursor: 'pointer' }} onClick={() => setSelectedUserModal(u)}>
-                      {u.full_name || u.name || 'Unnamed Employee'}
-                    </td>
-                    <td style={{ padding: '10px', color: '#64748b' }}>{u.email}</td>
-                    <td style={{ padding: '10px', color: '#0f172a' }}>🏢 {u.department || 'englite'}</td>
-                    <td style={{ padding: '10px' }}>
-                      <span style={{
-                        padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold',
-                        backgroundColor: normRole === 'manager' ? '#e0e7ff' : normRole === 'admin' ? '#f3e8ff' : '#dcfce7',
-                        color: normRole === 'manager' ? '#3730a3' : normRole === 'admin' ? '#7e22ce' : '#15803d'
-                      }}>
-                        {normRole.toUpperCase()}
-                      </span>
-                    </td>
-                    <td style={{ padding: '10px', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                        <button onClick={() => setSelectedUserModal(u)} style={editBtnStyle}>
-                          👁️ View Details
-                        </button>
-                        {normRole === 'manager' ? (
-                          <button onClick={() => toggleRole(u.id, u.role)} style={demoteBtnStyle}>
-                            ⬇️ Demote
+          <div style={responsiveTableWrapper}>
+            <table style={{ width: '100%', minWidth: '550px', borderCollapse: 'collapse', fontSize: '14px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                  <th style={{ padding: '10px' }}>Employee Name</th>
+                  <th style={{ padding: '10px' }}>Email</th>
+                  <th style={{ padding: '10px' }}>Department</th>
+                  <th style={{ padding: '10px' }}>Role</th>
+                  <th style={{ padding: '10px', textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map((u) => {
+                  const normRole = String(u.role || 'user').toLowerCase().trim();
+                  return (
+                    <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '10px', fontWeight: 'bold', color: '#2563eb', cursor: 'pointer' }} onClick={() => setSelectedUserModal(u)}>
+                        {u.full_name || u.name || 'Unnamed Employee'}
+                      </td>
+                      <td style={{ padding: '10px', color: '#64748b' }}>{u.email}</td>
+                      <td style={{ padding: '10px', color: '#0f172a' }}>🏢 {u.department || 'englite'}</td>
+                      <td style={{ padding: '10px' }}>
+                        <span style={{
+                          padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold',
+                          backgroundColor: normRole === 'manager' ? '#e0e7ff' : normRole === 'admin' ? '#f3e8ff' : '#dcfce7',
+                          color: normRole === 'manager' ? '#3730a3' : normRole === 'admin' ? '#7e22ce' : '#15803d'
+                        }}>
+                          {normRole.toUpperCase()}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                          <button onClick={() => setSelectedUserModal(u)} style={editBtnStyle}>
+                            👁️ View
                           </button>
-                        ) : (
-                          <button onClick={() => toggleRole(u.id, u.role)} style={promoteBtnStyle}>
-                            ⬆️ Promote
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                          {normRole === 'manager' ? (
+                            <button onClick={() => toggleRole(u.id, u.role)} style={demoteBtnStyle}>
+                              ⬇️ Demote
+                            </button>
+                          ) : (
+                            <button onClick={() => toggleRole(u.id, u.role)} style={promoteBtnStyle}>
+                              ⬆️ Promote
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -1208,30 +1196,32 @@ function ManagerStaffListView({ currentDepartment }) {
         ) : filteredStaff.length === 0 ? (
           <div style={{ padding: '20px', color: '#94a3b8' }}>No staff members found.</div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-                <th style={{ padding: '10px' }}>Staff Name</th>
-                <th style={{ padding: '10px' }}>Email</th>
-                <th style={{ padding: '10px' }}>Contact Phone</th>
-                <th style={{ padding: '10px', textAlign: 'right' }}>Management Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredStaff.map((u) => (
-                <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px', fontWeight: 'bold', color: '#0f172a' }}>{u.full_name || u.name}</td>
-                  <td style={{ padding: '10px', color: '#64748b' }}>{u.email}</td>
-                  <td style={{ padding: '10px', color: '#0f172a' }}>📞 {u.phone || 'N/A'}</td>
-                  <td style={{ padding: '10px', textAlign: 'right' }}>
-                    <button onClick={() => setUserToRemove(u)} style={declineBtnStyle}>
-                      ❌ Remove from Dept
-                    </button>
-                  </td>
+          <div style={responsiveTableWrapper}>
+            <table style={{ width: '100%', minWidth: '500px', borderCollapse: 'collapse', fontSize: '14px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                  <th style={{ padding: '10px' }}>Staff Name</th>
+                  <th style={{ padding: '10px' }}>Email</th>
+                  <th style={{ padding: '10px' }}>Contact Phone</th>
+                  <th style={{ padding: '10px', textAlign: 'right' }}>Management Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredStaff.map((u) => (
+                  <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '10px', fontWeight: 'bold', color: '#0f172a' }}>{u.full_name || u.name}</td>
+                    <td style={{ padding: '10px', color: '#64748b' }}>{u.email}</td>
+                    <td style={{ padding: '10px', color: '#0f172a' }}>📞 {u.phone || 'N/A'}</td>
+                    <td style={{ padding: '10px', textAlign: 'right' }}>
+                      <button onClick={() => setUserToRemove(u)} style={declineBtnStyle}>
+                        ❌ Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -1378,7 +1368,7 @@ function AdminReportSchedulerView() {
       <h2>📧 Automated Timesheet Reports</h2>
       <p style={subTextStyle}>Configure recipient emails, dispatch days, and exact times for automated report delivery.</p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
         <div style={cardStyle}>
           <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#0f172a' }}>➕ Schedule New Report</h3>
           
@@ -1513,7 +1503,6 @@ function DepartmentTimeLogsView({ department }) {
         .gte('clock_in', currentWeekStart.toISOString())
         .lt('clock_in', weekEnd.toISOString());
 
-      // Relax department filter to retrieve all logs if no department constraint is active
       if (department && department !== 'All Departments') {
         query = query.or(`department.ilike.%${department.trim()}%,department.is.null`);
       }
@@ -1688,7 +1677,7 @@ function DepartmentTimeLogsView({ department }) {
       <div style={weekNavHeaderStyle}>
         <button onClick={() => changeWeek(-1)} style={weekNavBtnStyle}>◀ Prev Week</button>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>
+          <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a' }}>
             Week: {currentWeekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
           </div>
           <button onClick={resetToCurrentWeek} style={todayBtnStyle}>Jump to Current Week</button>
@@ -1707,7 +1696,7 @@ function DepartmentTimeLogsView({ department }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
         <h3 style={{ margin: 0, fontSize: '16px', color: '#0f172a' }}>
           📋 Department Timesheet Records ({department})
         </h3>
@@ -1716,7 +1705,7 @@ function DepartmentTimeLogsView({ department }) {
           disabled={processing || weeklySummaries.length === 0} 
           style={bulkApproveBtnStyle}
         >
-          {processing ? 'Processing...' : '⚡ Bulk Approve Entire Week'}
+          {processing ? 'Processing...' : '⚡ Bulk Approve Week'}
         </button>
       </div>
 
@@ -1726,125 +1715,129 @@ function DepartmentTimeLogsView({ department }) {
         ) : weeklySummaries.length === 0 ? (
           <div style={{ padding: '20px', color: '#94a3b8' }}>No shift logs recorded in database for this week.</div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-                <th style={{ padding: '10px' }}>Employee</th>
-                <th style={{ padding: '10px' }}>Weekly Hours</th>
-                <th style={{ padding: '10px' }}>Status</th>
-                <th style={{ padding: '10px', textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {weeklySummaries.map((emp) => {
-                const isOpen = expandedUser === emp.id;
+          <div style={responsiveTableWrapper}>
+            <table style={{ width: '100%', minWidth: '550px', borderCollapse: 'collapse', fontSize: '14px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                  <th style={{ padding: '10px' }}>Employee</th>
+                  <th style={{ padding: '10px' }}>Weekly Hours</th>
+                  <th style={{ padding: '10px' }}>Status</th>
+                  <th style={{ padding: '10px', textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {weeklySummaries.map((emp) => {
+                  const isOpen = expandedUser === emp.id;
 
-                return (
-                  <React.Fragment key={emp.id}>
-                    <tr style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: isOpen ? '#f8fafc' : '#ffffff' }}>
-                      <td onClick={() => toggleExpand(emp.id)} style={{ padding: '12px 10px', fontWeight: 'bold', color: '#2563eb', cursor: 'pointer' }}>
-                        {isOpen ? '▼ ' : '▶ '} {emp.name}
-                      </td>
-                      <td style={{ padding: '10px', fontWeight: 'bold', color: '#0f172a' }}>
-                        {emp.weeklyTotalHours} hrs
-                      </td>
-                      <td style={{ padding: '10px' }}>
-                        <span style={{
-                          padding: '4px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold',
-                          backgroundColor: emp.status === 'Approved' ? '#dcfce7' : '#fef3c7',
-                          color: emp.status === 'Approved' ? '#15803d' : '#b45309'
-                        }}>
-                          {emp.status}
-                        </span>
-                      </td>
-                      <td style={{ padding: '10px', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                          <button onClick={() => toggleExpand(emp.id)} style={editBtnStyle}>
-                            {isOpen ? 'Close' : '🔍 View Shifts'}
-                          </button>
-                          {emp.status !== 'Approved' && (
-                            <button onClick={() => handleApproveWeekly(emp)} disabled={processing} style={approveBtnStyle}>
-                              ✓ Approve Week
+                  return (
+                    <React.Fragment key={emp.id}>
+                      <tr style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: isOpen ? '#f8fafc' : '#ffffff' }}>
+                        <td onClick={() => toggleExpand(emp.id)} style={{ padding: '12px 10px', fontWeight: 'bold', color: '#2563eb', cursor: 'pointer' }}>
+                          {isOpen ? '▼ ' : '▶ '} {emp.name}
+                        </td>
+                        <td style={{ padding: '10px', fontWeight: 'bold', color: '#0f172a' }}>
+                          {emp.weeklyTotalHours} hrs
+                        </td>
+                        <td style={{ padding: '10px' }}>
+                          <span style={{
+                            padding: '4px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold',
+                            backgroundColor: emp.status === 'Approved' ? '#dcfce7' : '#fef3c7',
+                            color: emp.status === 'Approved' ? '#15803d' : '#b45309'
+                          }}>
+                            {emp.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px', textAlign: 'right' }}>
+                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                            <button onClick={() => toggleExpand(emp.id)} style={editBtnStyle}>
+                              {isOpen ? 'Close' : '🔍 Shifts'}
                             </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-
-                    {isOpen && (
-                      <tr>
-                        <td colSpan="4" style={{ padding: '12px 20px', backgroundColor: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
-                          <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '10px', border: '1px solid #cbd5e1' }}>
-                            <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#0f172a' }}>
-                              🗓️ Shift Logs for <strong>{emp.name}</strong>
-                            </h4>
-
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                              <thead>
-                                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1', textAlign: 'left' }}>
-                                  <th style={{ padding: '8px' }}>Day & Date</th>
-                                  <th style={{ padding: '8px' }}>Clock In</th>
-                                  <th style={{ padding: '8px' }}>Clock Out</th>
-                                  <th style={{ padding: '8px' }}>Paid Time</th>
-                                  <th style={{ padding: '8px', textAlign: 'right' }}>Edit Time</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {emp.shifts.map((s) => (
-                                  <tr key={s.logId} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#0f172a' }}>{s.day}, {s.date}</td>
-                                    
-                                    <td style={{ padding: '8px', color: '#15803d', fontWeight: 'bold' }}>
-                                      {editingLogId === s.logId ? (
-                                        <input
-                                          type="time"
-                                          value={editInTime}
-                                          onChange={(e) => setEditInTime(e.target.value)}
-                                          style={timeInputStyle}
-                                        />
-                                      ) : (
-                                        `🟢 ${s.clockIn}`
-                                      )}
-                                    </td>
-
-                                    <td style={{ padding: '8px', color: '#b91c1c', fontWeight: 'bold' }}>
-                                      {editingLogId === s.logId ? (
-                                        <input
-                                          type="time"
-                                          value={editOutTime}
-                                          onChange={(e) => setEditOutTime(e.target.value)}
-                                          style={timeInputStyle}
-                                        />
-                                      ) : (
-                                        `⏹ ${s.clockOut}`
-                                      )}
-                                    </td>
-
-                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#0f172a' }}>{s.paidHours} hrs</td>
-
-                                    <td style={{ padding: '8px', textAlign: 'right' }}>
-                                      {editingLogId === s.logId ? (
-                                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
-                                          <button onClick={() => setEditingLogId(null)} style={editBtnStyle}>Cancel</button>
-                                          <button onClick={() => saveShiftTimeEdit(s)} style={approveBtnStyle}>Save 💾</button>
-                                        </div>
-                                      ) : (
-                                        <button onClick={() => startEditShift(s)} style={editBtnStyle}>✏️ Change Time</button>
-                                      )}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                            {emp.status !== 'Approved' && (
+                              <button onClick={() => handleApproveWeekly(emp)} disabled={processing} style={approveBtnStyle}>
+                                ✓ Approve
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
-          </table>
+
+                      {isOpen && (
+                        <tr>
+                          <td colSpan="4" style={{ padding: '12px 10px', backgroundColor: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
+                            <div style={{ backgroundColor: '#ffffff', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1' }}>
+                              <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#0f172a' }}>
+                                🗓️ Shift Logs for <strong>{emp.name}</strong>
+                              </h4>
+
+                              <div style={responsiveTableWrapper}>
+                                <table style={{ width: '100%', minWidth: '450px', borderCollapse: 'collapse', fontSize: '13px' }}>
+                                  <thead>
+                                    <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1', textAlign: 'left' }}>
+                                      <th style={{ padding: '8px' }}>Day & Date</th>
+                                      <th style={{ padding: '8px' }}>Clock In</th>
+                                      <th style={{ padding: '8px' }}>Clock Out</th>
+                                      <th style={{ padding: '8px' }}>Paid Time</th>
+                                      <th style={{ padding: '8px', textAlign: 'right' }}>Edit Time</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {emp.shifts.map((s) => (
+                                      <tr key={s.logId} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                        <td style={{ padding: '8px', fontWeight: 'bold', color: '#0f172a' }}>{s.day}, {s.date}</td>
+                                        
+                                        <td style={{ padding: '8px', color: '#15803d', fontWeight: 'bold' }}>
+                                          {editingLogId === s.logId ? (
+                                            <input
+                                              type="time"
+                                              value={editInTime}
+                                              onChange={(e) => setEditInTime(e.target.value)}
+                                              style={timeInputStyle}
+                                            />
+                                          ) : (
+                                            `🟢 ${s.clockIn}`
+                                          )}
+                                        </td>
+
+                                        <td style={{ padding: '8px', color: '#b91c1c', fontWeight: 'bold' }}>
+                                          {editingLogId === s.logId ? (
+                                            <input
+                                              type="time"
+                                              value={editOutTime}
+                                              onChange={(e) => setEditOutTime(e.target.value)}
+                                              style={timeInputStyle}
+                                            />
+                                          ) : (
+                                            `⏹ ${s.clockOut}`
+                                          )}
+                                        </td>
+
+                                        <td style={{ padding: '8px', fontWeight: 'bold', color: '#0f172a' }}>{s.paidHours} hrs</td>
+
+                                        <td style={{ padding: '8px', textAlign: 'right' }}>
+                                          {editingLogId === s.logId ? (
+                                            <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
+                                              <button onClick={() => setEditingLogId(null)} style={editBtnStyle}>Cancel</button>
+                                              <button onClick={() => saveShiftTimeEdit(s)} style={approveBtnStyle}>Save 💾</button>
+                                            </div>
+                                          ) : (
+                                            <button onClick={() => startEditShift(s)} style={editBtnStyle}>✏️ Edit</button>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
@@ -1942,14 +1935,14 @@ function UserProfileSettingsView({ user, role }) {
       )}
 
       <div style={{ ...cardStyle, maxWidth: '600px' }}>
-        <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <h3 style={sectionHeadingStyle}>1. Personal & Contact Details</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '12px' }}>
               <div><label style={labelStyle}>Full Name</label><input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required style={inputStyle} /></div>
               <div><label style={labelStyle}>Email Address</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} /></div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
               <div><label style={labelStyle}>Address</label><input type="text" value={address} onChange={(e) => setAddress(e.target.value)} required style={inputStyle} /></div>
               <div><label style={labelStyle}>Phone Number</label><input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} required style={inputStyle} /></div>
             </div>
@@ -1963,7 +1956,7 @@ function UserProfileSettingsView({ user, role }) {
               <label style={labelStyle}>Current Password</label>
               <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} style={inputStyle} />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
               <div><label style={labelStyle}>New Password</label><input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} /></div>
               <div><label style={labelStyle}>Confirm New Password</label><input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} style={inputStyle} /></div>
             </div>
@@ -1978,65 +1971,72 @@ function UserProfileSettingsView({ user, role }) {
   );
 }
 
-// Inline Styles
+/* =========================================
+   RESPONSIVE INLINE STYLES
+   ========================================= */
 const layoutStyle = { minHeight: '100vh', backgroundColor: '#f1f5f9', fontFamily: 'sans-serif' };
-const headerStyle = { display: 'flex', justifyContent: 'space-between', padding: '16px 32px', backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0' };
+const headerStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap', gap: '12px' };
 const logoStyle = { fontSize: '20px', fontWeight: 'bold', color: '#0f172a' };
-const mainContentStyle = { padding: '32px', maxWidth: '1200px', margin: '0 auto' };
-const dashboardGrid = { display: 'grid', gridTemplateColumns: '250px 1fr', gap: '32px', alignItems: 'start' };
-const sidebarStyle = { display: 'flex', flexDirection: 'column', gap: '8px' };
-const sidebarHeader = { margin: '0 0 16px 0', fontSize: '13px', color: '#64748b', textTransform: 'uppercase' };
-const panelStyle = { backgroundColor: '#ffffff', padding: '32px', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', minHeight: '500px' };
-const cardStyle = { backgroundColor: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' };
-const subTextStyle = { color: '#64748b', fontSize: '14px', marginTop: '4px', marginBottom: '24px' };
+const mainContentStyle = { padding: '16px', maxWidth: '1200px', margin: '0 auto' };
+const dashboardGrid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', alignItems: 'start' };
+const sidebarStyle = { display: 'flex', flexDirection: 'row', overflowX: 'auto', WebkitOverflowScrolling: 'touch', gap: '8px', paddingBottom: '8px' };
+const sidebarHeader = { display: 'none' };
+const panelStyle = { backgroundColor: '#ffffff', padding: '16px', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', minHeight: '400px', width: '100%', boxSizing: 'border-box' };
+const cardStyle = { backgroundColor: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' };
+const subTextStyle = { color: '#64748b', fontSize: '13px', marginTop: '4px', marginBottom: '20px' };
 const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' };
 const inputStyle = { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' };
 const successBannerStyle = { padding: '12px 14px', backgroundColor: '#dcfce7', color: '#15803d', borderRadius: '8px', fontSize: '13px', fontWeight: '500' };
 
-const weekNavHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: '#f1f5f9', borderRadius: '10px', marginBottom: '20px', border: '1px solid #cbd5e1' };
-const weekNavBtnStyle = { padding: '8px 14px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', color: '#334155' };
+const weekNavHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', backgroundColor: '#f1f5f9', borderRadius: '10px', marginBottom: '16px', border: '1px solid #cbd5e1', flexWrap: 'wrap', gap: '8px' };
+const weekNavBtnStyle = { padding: '6px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', color: '#334155' };
 const todayBtnStyle = { background: 'none', border: 'none', color: '#2563eb', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' };
 
-const bulkApproveBtnStyle = { padding: '8px 16px', backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' };
-const approveBtnStyle = { padding: '6px 12px', backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' };
-const declineBtnStyle = { padding: '6px 12px', backgroundColor: '#dc2626', color: '#ffffff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' };
-const editBtnStyle = { padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' };
-const promoteBtnStyle = { padding: '6px 12px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' };
-const demoteBtnStyle = { padding: '6px 12px', backgroundColor: '#e2e8f0', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' };
+const bulkApproveBtnStyle = { padding: '8px 14px', backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' };
+const approveBtnStyle = { padding: '6px 10px', backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' };
+const declineBtnStyle = { padding: '6px 10px', backgroundColor: '#dc2626', color: '#ffffff', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' };
+const editBtnStyle = { padding: '6px 10px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' };
+const promoteBtnStyle = { padding: '6px 10px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' };
+const demoteBtnStyle = { padding: '6px 10px', backgroundColor: '#e2e8f0', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' };
 
-const sectionHeadingStyle = { margin: '0 0 12px 0', fontSize: '15px', color: '#0f172a', borderLeft: '3px solid #2563eb', paddingLeft: '8px' };
+const sectionHeadingStyle = { margin: '0 0 12px 0', fontSize: '14px', color: '#0f172a', borderLeft: '3px solid #2563eb', paddingLeft: '8px' };
 const dividerStyle = { border: 'none', borderTop: '1px solid #e2e8f0', margin: '4px 0' };
 
-const modalOverlayStyle = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' };
-const modalBoxStyle = { backgroundColor: '#ffffff', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '700px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' };
+const modalOverlayStyle = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' };
+const modalBoxStyle = { backgroundColor: '#ffffff', borderRadius: '16px', padding: '20px', width: '100%', maxWidth: '600px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', boxSizing: 'border-box' };
 const closeModalBtnStyle = { background: 'none', border: 'none', color: '#64748b', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' };
 
 const loginWrapperStyle = { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '70vh' };
-const loginCardStyle = { backgroundColor: '#ffffff', borderRadius: '16px', padding: '36px', width: '100%', maxWidth: '420px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0' };
+const loginCardStyle = { backgroundColor: '#ffffff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '380px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0', boxSizing: 'border-box' };
 const loginBtnStyle = { width: '100%', padding: '12px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' };
-const logoutBtnStyle = { padding: '6px 14px', backgroundColor: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' };
+const logoutBtnStyle = { padding: '6px 12px', backgroundColor: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' };
 const errorAlertStyle = { padding: '10px 12px', backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fca5a5', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', marginBottom: '16px' };
 const timeInputStyle = { padding: '4px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '12px', fontWeight: 'bold' };
+const responsiveTableWrapper = { width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' };
 
 const navBtn = (isActive) => ({
-  padding: '12px 16px',
-  textAlign: 'left',
+  padding: '10px 14px',
+  whiteSpace: 'nowrap',
+  flexShrink: 0,
   borderRadius: '8px',
   border: 'none',
-  backgroundColor: isActive ? '#e0e7ff' : 'transparent',
+  backgroundColor: isActive ? '#e0e7ff' : '#ffffff',
   color: isActive ? '#3730a3' : '#475569',
   fontWeight: isActive ? 'bold' : '500',
+  fontSize: '13px',
   cursor: 'pointer',
+  boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
 });
 
 const btnStyle = (color) => ({
-  padding: '10px 18px',
+  padding: '10px 16px',
   backgroundColor: color,
   color: '#fff',
   border: 'none',
   borderRadius: '8px',
   fontWeight: 'bold',
   cursor: 'pointer',
+  fontSize: '13px',
 });
 
 const badgeStyle = (role) => {
