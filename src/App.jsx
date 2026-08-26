@@ -32,16 +32,17 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div style={{
-          padding: '24px',
+          padding: '16px',
           backgroundColor: '#fef2f2',
           border: '1px solid #fca5a5',
           borderRadius: '12px',
           color: '#991b1b',
-          margin: '20px auto',
-          maxWidth: '600px'
+          margin: '16px auto',
+          maxWidth: '600px',
+          boxSizing: 'border-box'
         }}>
-          <h3 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>⚠️ Something went wrong in this workspace view.</h3>
-          <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#7f1d1d' }}>
+          <h3 style={{ margin: '0 0 8px 0', fontSize: '16px' }}>⚠️ Something went wrong in this workspace view.</h3>
+          <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: '#7f1d1d', wordBreak: 'break-word' }}>
             {this.state.error?.message || 'An unexpected rendering error occurred.'}
           </p>
           <button
@@ -50,7 +51,7 @@ class ErrorBoundary extends React.Component {
               window.location.reload();
             }}
             style={{
-              padding: '8px 16px',
+              padding: '8px 14px',
               backgroundColor: '#dc2626',
               color: '#ffffff',
               border: 'none',
@@ -141,7 +142,7 @@ export default function App() {
     <div style={layoutStyle}>
       {/* HEADER BAR */}
       <header style={headerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <div style={logoStyle}>🚀 Rocket Time</div>
           {currentUser && (
             <span style={badgeStyle(currentUser.role)}>
@@ -151,9 +152,9 @@ export default function App() {
         </div>
 
         {currentUser && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <div style={{ fontSize: '13px', color: '#64748b' }}>
-              Logged in as: <strong>{currentUser.name}</strong> ({currentUser.department})
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', width: '100%', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: '12px', color: '#64748b', wordBreak: 'break-word' }}>
+              Logged in: <strong>{currentUser.name}</strong> ({currentUser.department})
             </div>
             <button onClick={handleLogout} style={logoutBtnStyle}>
               🚪 Log Out
@@ -266,19 +267,19 @@ function MasterLoginPortal({ onLoginSuccess }) {
   return (
     <div style={loginWrapperStyle}>
       <div style={loginCardStyle}>
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div style={{ fontSize: '42px', marginBottom: '8px' }}>🚀</div>
-          <h2 style={{ margin: 0, fontSize: '24px', color: '#0f172a', fontWeight: 'bold' }}>
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+          <div style={{ fontSize: '36px', marginBottom: '6px' }}>🚀</div>
+          <h2 style={{ margin: 0, fontSize: '20px', color: '#0f172a', fontWeight: 'bold' }}>
             Rocket Time Login
           </h2>
-          <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>
+          <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#64748b' }}>
             Enter your workplace credentials to access your workspace.
           </p>
         </div>
 
         {errorMsg && <div style={errorAlertStyle}>{errorMsg}</div>}
 
-        <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
             <label style={labelStyle}>Email Address</label>
             <input
@@ -324,13 +325,12 @@ function AdminDashboard({
   return (
     <div style={dashboardGrid}>
       <aside style={sidebarStyle}>
-        <h3 style={sidebarHeader}>ADMIN WORKSPACE</h3>
         <button onClick={() => setActiveTab('users')} style={navBtn(activeTab === 'users')}>👥 Users & Profiles</button>
         <button onClick={() => setActiveTab('sites')} style={navBtn(activeTab === 'sites')}>📍 Sites & Depts</button>
         <button onClick={() => setActiveTab('invites')} style={navBtn(activeTab === 'invites')}>✉️ Send Invites</button>
         <button onClick={() => setActiveTab('payroll')} style={navBtn(activeTab === 'payroll')}>📊 Global Payroll</button>
         <button onClick={() => setActiveTab('reports')} style={navBtn(activeTab === 'reports')}>📧 Reports</button>
-        <button onClick={() => setActiveTab('system')} style={navBtn(activeTab === 'system')}>⚙️ Master Settings</button>
+        <button onClick={() => setActiveTab('system')} style={navBtn(activeTab === 'system')}>⚙️ Settings</button>
       </aside>
 
       <div style={panelStyle}>
@@ -339,7 +339,7 @@ function AdminDashboard({
 
         {activeTab === 'invites' && (
           <div>
-            <h2>✉️ Send Employee Invitation</h2>
+            <h2 style={viewHeadingStyle}>✉️ Send Employee Invitation</h2>
             <p style={subTextStyle}>Send an onboarding invitation specifying department, site, and employment type.</p>
             <div style={{ ...cardStyle, maxWidth: '500px' }}>
               <form onSubmit={handleSendInvite}>
@@ -360,7 +360,7 @@ function AdminDashboard({
                 </select>
 
                 <label style={labelStyle}>Employment Type</label>
-                <select value={employmentType} onChange={(e) => setEmploymentType(e.target.value)} style={{ ...inputStyle, width: '100%', marginBottom: '20px' }}>
+                <select value={employmentType} onChange={(e) => setEmploymentType(e.target.value)} style={{ ...inputStyle, width: '100%', marginBottom: '16px' }}>
                   <option value="Full Time">💼 Full Time</option>
                   <option value="Part Time">⏱️ Part Time</option>
                   <option value="Casual">📅 Casual</option>
@@ -383,7 +383,7 @@ function AdminDashboard({
 function AdminWeeklyPayrollView() {
   return (
     <div>
-      <h2>📊 Global Payroll & Shift Summaries</h2>
+      <h2 style={viewHeadingStyle}>📊 Global Payroll & Shift Summaries</h2>
       <p style={subTextStyle}>Review and approve accumulated time logs for all company departments across active sites.</p>
       <DepartmentTimeLogsView department="All Departments" />
     </div>
@@ -402,15 +402,14 @@ function ManagerDashboard({
   return (
     <div style={dashboardGrid}>
       <aside style={sidebarStyle}>
-        <h3 style={sidebarHeader}>{currentUser.department} MANAGER</h3>
-        <button onClick={() => setActiveTab('timeclock')} style={navBtn(activeTab === 'timeclock')}>⏱️ My Time Clock</button>
-        <button onClick={() => setActiveTab('mytimesheet')} style={navBtn(activeTab === 'mytimesheet')}>📋 My Timesheet</button>
-        <button onClick={() => setActiveTab('users')} style={navBtn(activeTab === 'users')}>👥 Dept Staff</button>
-        <button onClick={() => setActiveTab('availability')} style={navBtn(activeTab === 'availability')}>⏱️ Staff Availability</button>
-        <button onClick={() => setActiveTab('rostering')} style={navBtn(activeTab === 'rostering')}>📅 Weekly Rostering</button>
-        <button onClick={() => setActiveTab('invites')} style={navBtn(activeTab === 'invites')}>✉️ Invite Staff</button>
-        <button onClick={() => setActiveTab('logs')} style={navBtn(activeTab === 'logs')}>🏢 Dept Time Logs</button>
-        <button onClick={() => setActiveTab('settings')} style={navBtn(activeTab === 'settings')}>⚙️ Account Settings</button>
+        <button onClick={() => setActiveTab('timeclock')} style={navBtn(activeTab === 'timeclock')}>⏱️ Time Clock</button>
+        <button onClick={() => setActiveTab('mytimesheet')} style={navBtn(activeTab === 'mytimesheet')}>📋 Timesheet</button>
+        <button onClick={() => setActiveTab('users')} style={navBtn(activeTab === 'users')}>👥 Staff</button>
+        <button onClick={() => setActiveTab('availability')} style={navBtn(activeTab === 'availability')}>⏱️ Availability</button>
+        <button onClick={() => setActiveTab('rostering')} style={navBtn(activeTab === 'rostering')}>📅 Rostering</button>
+        <button onClick={() => setActiveTab('invites')} style={navBtn(activeTab === 'invites')}>✉️ Invites</button>
+        <button onClick={() => setActiveTab('logs')} style={navBtn(activeTab === 'logs')}>🏢 Logs</button>
+        <button onClick={() => setActiveTab('settings')} style={navBtn(activeTab === 'settings')}>⚙️ Settings</button>
       </aside>
 
       <div style={panelStyle}>
@@ -422,7 +421,7 @@ function ManagerDashboard({
 
         {activeTab === 'invites' && (
           <div>
-            <h2>✉️ Onboarding Invites</h2>
+            <h2 style={viewHeadingStyle}>✉️ Onboarding Invites</h2>
             <p style={subTextStyle}>
               Send onboarding registration links. Invited staff will automatically be assigned to <strong>{currentUser.department}</strong> at <strong>{currentUser.location}</strong>.
             </p>
@@ -450,7 +449,7 @@ function ManagerDashboard({
                 <select 
                   value={employmentType} 
                   onChange={(e) => setEmploymentType(e.target.value)} 
-                  style={{ ...inputStyle, width: '100%', marginBottom: '20px' }}
+                  style={{ ...inputStyle, width: '100%', marginBottom: '16px' }}
                 >
                   <option value="Full Time">💼 Full Time</option>
                   <option value="Part Time">⏱️ Part Time</option>
@@ -480,13 +479,12 @@ function UserDashboard({ currentUser }) {
   return (
     <div style={dashboardGrid}>
       <aside style={sidebarStyle}>
-        <h3 style={sidebarHeader}>EMPLOYEE WORKSPACE</h3>
-        <button onClick={() => setActiveTab('offers')} style={navBtn(activeTab === 'offers')}>📬 Shift Offers</button>
-        <button onClick={() => setActiveTab('timeclock')} style={navBtn(activeTab === 'timeclock')}>⏱️ My Time Clock</button>
-        <button onClick={() => setActiveTab('roster')} style={navBtn(activeTab === 'roster')}>📅 Shift Roster</button>
-        <button onClick={() => setActiveTab('availability')} style={navBtn(activeTab === 'availability')}>⏱️ My Availability</button>
-        <button onClick={() => setActiveTab('timesheet')} style={navBtn(activeTab === 'timesheet')}>📋 My Timesheet</button>
-        <button onClick={() => setActiveTab('settings')} style={navBtn(activeTab === 'settings')}>⚙️ Account Settings</button>
+        <button onClick={() => setActiveTab('offers')} style={navBtn(activeTab === 'offers')}>📬 Offers</button>
+        <button onClick={() => setActiveTab('timeclock')} style={navBtn(activeTab === 'timeclock')}>⏱️ Time Clock</button>
+        <button onClick={() => setActiveTab('roster')} style={navBtn(activeTab === 'roster')}>📅 Roster</button>
+        <button onClick={() => setActiveTab('availability')} style={navBtn(activeTab === 'availability')}>⏱️ Availability</button>
+        <button onClick={() => setActiveTab('timesheet')} style={navBtn(activeTab === 'timesheet')}>📋 Timesheet</button>
+        <button onClick={() => setActiveTab('settings')} style={navBtn(activeTab === 'settings')}>⚙️ Settings</button>
       </aside>
 
       <div style={panelStyle}>
@@ -618,20 +616,20 @@ function ManagerInstantAvailabilityView({ department, location }) {
 
   return (
     <div>
-      <h2>⏱️ Instant Staff Availability & Shift Offers</h2>
+      <h2 style={viewHeadingStyle}>⏱️ Instant Staff Availability & Shift Offers</h2>
       <p style={subTextStyle}>Select target week and day to inspect availability and send instant shift invitations.</p>
 
       {msg && <div style={{ ...successBannerStyle, marginBottom: '16px' }}>{msg}</div>}
 
       <div style={weekNavHeaderStyle}>
-        <button onClick={() => changeWeek(-1)} style={weekNavBtnStyle}>◀ Prev Week</button>
-        <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a', textAlign: 'center' }}>
+        <button onClick={() => changeWeek(-1)} style={weekNavBtnStyle}>◀ Prev</button>
+        <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#0f172a', textAlign: 'center' }}>
           {currentWeekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
         </div>
-        <button onClick={() => changeWeek(1)} style={weekNavBtnStyle}>Next Week ▶</button>
+        <button onClick={() => changeWeek(1)} style={weekNavBtnStyle}>Next ▶</button>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '4px' }}>
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '4px' }}>
         {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, idx) => {
           const dateObj = new Date(currentWeekStart);
           dateObj.setDate(dateObj.getDate() + idx);
@@ -640,10 +638,10 @@ function ManagerInstantAvailabilityView({ department, location }) {
               key={day}
               onClick={() => setSelectedDay(day)}
               style={{
-                padding: '8px 12px',
+                padding: '6px 10px',
                 borderRadius: '8px',
                 border: 'none',
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 flexShrink: 0,
@@ -651,62 +649,63 @@ function ManagerInstantAvailabilityView({ department, location }) {
                 color: selectedDay === day ? '#ffffff' : '#334155'
               }}
             >
-              <div>{day}</div>
-              <div style={{ fontSize: '10px', opacity: 0.8 }}>{dateObj.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' })}</div>
+              <div>{day.slice(0, 3)}</div>
+              <div style={{ fontSize: '9px', opacity: 0.8 }}>{dateObj.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' })}</div>
             </button>
           );
         })}
       </div>
 
       <div style={cardStyle}>
-        <h4 style={{ margin: '0 0 14px 0', fontSize: '15px', color: '#0f172a' }}>
-          Staff Availability Roster for <strong>{selectedDay}</strong> ({department || 'All Staff'})
+        <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#0f172a' }}>
+          Availability for <strong>{selectedDay}</strong> ({department || 'All Staff'})
         </h4>
 
         {loading ? (
-          <div style={{ padding: '12px', color: '#64748b' }}>Checking staff availability...</div>
+          <div style={{ padding: '12px', color: '#64748b', fontSize: '12px' }}>Checking staff availability...</div>
         ) : staffRoster.length === 0 ? (
-          <div style={{ padding: '12px', color: '#94a3b8' }}>No employees registered in the system.</div>
+          <div style={{ padding: '12px', color: '#94a3b8', fontSize: '12px' }}>No employees registered in the system.</div>
         ) : (
           <div style={responsiveTableWrapper}>
-            <table style={{ width: '100%', minWidth: '550px', borderCollapse: 'collapse', fontSize: '14px' }}>
+            <table style={{ width: '100%', minWidth: '500px', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-                  <th style={{ padding: '10px' }}>Employee</th>
-                  <th style={{ padding: '10px' }}>Email</th>
-                  <th style={{ padding: '10px' }}>{selectedDay} Status</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>Action</th>
+                  <th style={{ padding: '8px' }}>Employee</th>
+                  <th style={{ padding: '8px' }}>Email</th>
+                  <th style={{ padding: '8px' }}>Status</th>
+                  <th style={{ padding: '8px', textAlign: 'right' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {staffRoster.map(staff => (
                   <tr key={staff.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '10px', fontWeight: 'bold', color: '#0f172a' }}>{staff.full_name || staff.name || 'Unnamed Staff'}</td>
-                    <td style={{ padding: '10px', color: '#64748b' }}>{staff.email}</td>
-                    <td style={{ padding: '10px' }}>
+                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#0f172a', wordBreak: 'break-word' }}>{staff.full_name || staff.name || 'Unnamed Staff'}</td>
+                    <td style={{ padding: '8px', color: '#64748b', wordBreak: 'break-all' }}>{staff.email}</td>
+                    <td style={{ padding: '8px' }}>
                       {staff.isAvailable ? (
-                        <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', backgroundColor: '#dcfce7', color: '#15803d' }}>
+                        <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold', backgroundColor: '#dcfce7', color: '#15803d', whiteSpace: 'nowrap' }}>
                           🟢 Available ({staff.timing})
                         </span>
                       ) : (
-                        <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', backgroundColor: '#fef2f2', color: '#dc2626' }}>
-                          🔴 Marked Unavailable
+                        <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold', backgroundColor: '#fef2f2', color: '#dc2626', whiteSpace: 'nowrap' }}>
+                          🔴 Unavailable
                         </span>
                       )}
                     </td>
-                    <td style={{ padding: '10px', textAlign: 'right' }}>
+                    <td style={{ padding: '8px', textAlign: 'right' }}>
                       <button
                         onClick={() => handleSendInstantOffer(staff)}
                         disabled={sendingId === staff.id || !staff.isAvailable}
                         style={{
-                          padding: '6px 12px',
+                          padding: '5px 10px',
                           borderRadius: '6px',
                           border: 'none',
-                          fontSize: '12px',
+                          fontSize: '11px',
                           fontWeight: 'bold',
                           cursor: staff.isAvailable ? 'pointer' : 'not-allowed',
                           backgroundColor: !staff.isAvailable ? '#cbd5e1' : sendingId === staff.id ? '#94a3b8' : '#2563eb',
                           color: '#ffffff',
+                          whiteSpace: 'nowrap'
                         }}
                       >
                         {!staff.isAvailable ? 'Unavailable' : sendingId === staff.id ? 'Sending...' : 'Offer Shift 🚀'}
@@ -875,29 +874,29 @@ function PendingOffersView({ user }) {
 
   if (loading) {
     return (
-      <div style={{ padding: '30px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
-        <div style={{ fontSize: '14px', color: '#64748b', fontWeight: 'bold' }}>⌛ Checking database for shift offers...</div>
+      <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+        <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 'bold' }}>⌛ Checking shift offers...</div>
       </div>
     );
   }
 
   return (
-    <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+    <div style={{ backgroundColor: '#ffffff', padding: '14px', borderRadius: '14px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
         <div>
-          <h3 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>📬 Pending Shift Offers</h3>
-          <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#64748b' }}>
-            Review and accept open shifts offered by your department manager.
+          <h3 style={{ margin: 0, fontSize: '16px', color: '#0f172a' }}>📬 Pending Shift Offers</h3>
+          <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#64748b' }}>
+            Review and accept open shifts offered by your manager.
           </p>
         </div>
-        <span style={{ backgroundColor: '#eff6ff', color: '#2563eb', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>
+        <span style={{ backgroundColor: '#eff6ff', color: '#2563eb', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>
           {shiftOffers.length} {shiftOffers.length === 1 ? 'Available' : 'Available'}
         </span>
       </div>
 
       {msg.text && (
         <div style={{
-          padding: '12px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 'bold', marginBottom: '16px',
+          padding: '10px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', marginBottom: '14px',
           backgroundColor: msg.isError ? '#fef2f2' : '#f0fdf4', color: msg.isError ? '#991b1b' : '#15803d',
           border: `1px solid ${msg.isError ? '#fca5a5' : '#bbf7d0'}`
         }}>
@@ -906,56 +905,56 @@ function PendingOffersView({ user }) {
       )}
 
       {shiftOffers.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '30px 16px', border: '1px dashed #cbd5e1', borderRadius: '12px', backgroundColor: '#f8fafc' }}>
-          <div style={{ fontSize: '32px', marginBottom: '8px' }}>☕</div>
-          <h4 style={{ margin: 0, color: '#334155' }}>No Pending Shift Offers</h4>
-          <p style={{ margin: '4px 0 0 0', color: '#94a3b8', fontSize: '12px' }}>
+        <div style={{ textAlign: 'center', padding: '24px 12px', border: '1px dashed #cbd5e1', borderRadius: '12px', backgroundColor: '#f8fafc' }}>
+          <div style={{ fontSize: '28px', marginBottom: '6px' }}>☕</div>
+          <h4 style={{ margin: 0, color: '#334155', fontSize: '14px' }}>No Pending Shift Offers</h4>
+          <p style={{ margin: '2px 0 0 0', color: '#94a3b8', fontSize: '11px' }}>
             You're all caught up! New shift invitations will appear here automatically.
           </p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '14px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
           {shiftOffers.map((offer) => {
             const rawDate = offer.shift_date || offer.date;
             const { dayName, formattedDate } = formatDayAndDate(rawDate);
 
             return (
-              <div key={offer.id} style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '14px', border: '2px solid #3b82f6', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+              <div key={offer.id} style={{ backgroundColor: '#ffffff', padding: '14px', borderRadius: '12px', border: '2px solid #3b82f6', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                   <div>
-                    <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#0f172a' }}>
+                    <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#0f172a' }}>
                       📅 {dayName}
                     </div>
-                    <div style={{ fontSize: '12px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
                       {formattedDate || rawDate}
                     </div>
                   </div>
-                  <span style={{ padding: '4px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold', backgroundColor: '#dbeafe', color: '#1e40af' }}>
+                  <span style={{ padding: '3px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 'bold', backgroundColor: '#dbeafe', color: '#1e40af' }}>
                     PENDING
                   </span>
                 </div>
 
-                <div style={{ backgroundColor: '#f8fafc', padding: '10px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '12px' }}>
-                  <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Proposed Hours</div>
-                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#2563eb', marginTop: '2px' }}>
+                <div style={{ backgroundColor: '#f8fafc', padding: '8px 10px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '10px' }}>
+                  <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Hours</div>
+                  <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#2563eb', marginTop: '2px' }}>
                     ⏰ {offer.shift_time || '08:30 - 16:30'}
                   </div>
                 </div>
 
-                <div style={{ fontSize: '12px', color: '#475569', marginBottom: '14px' }}>
+                <div style={{ fontSize: '11px', color: '#475569', marginBottom: '12px', wordBreak: 'break-word' }}>
                   📍 <strong>Location:</strong> Englite Campbellfield
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button
                     onClick={() => handleAccept(offer)}
-                    style={{ flex: 1, padding: '10px', backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
+                    style={{ flex: 1, padding: '8px', backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
                   >
                     ✓ Accept
                   </button>
                   <button
                     onClick={() => handleDecline(offer)}
-                    style={{ flex: 1, padding: '10px', backgroundColor: '#ffffff', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
+                    style={{ flex: 1, padding: '8px', backgroundColor: '#ffffff', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
                   >
                     ✕ Decline
                   </button>
@@ -1033,15 +1032,15 @@ function AdminUserRoleManagementView() {
 
   return (
     <div>
-      <h2>👥 Employee Roster & Role Control</h2>
+      <h2 style={viewHeadingStyle}>👥 Employee Roster & Role Control</h2>
       <p style={subTextStyle}>Admin Control: Inspect or update employee basic profile details and system roles.</p>
 
-      {msg && <div style={{ ...successBannerStyle, marginBottom: '16px' }}>{msg}</div>}
+      {msg && <div style={{ ...successBannerStyle, marginBottom: '14px' }}>{msg}</div>}
 
-      <div style={{ marginBottom: '16px', maxWidth: '400px' }}>
+      <div style={{ marginBottom: '14px', maxWidth: '400px' }}>
         <input
           type="text"
-          placeholder="🔍 Search employee by name, email, or department..."
+          placeholder="🔍 Search employee by name, email, or dept..."
           value={searchTerm}
           onChange={(e) => setSearchFilter(e.target.value)}
           style={{ ...inputStyle, width: '100%' }}
@@ -1050,19 +1049,19 @@ function AdminUserRoleManagementView() {
 
       <div style={cardStyle}>
         {loading ? (
-          <div style={{ padding: '20px', color: '#64748b' }}>Loading real profiles...</div>
+          <div style={{ padding: '16px', color: '#64748b', fontSize: '12px' }}>Loading real profiles...</div>
         ) : filteredUsers.length === 0 ? (
-          <div style={{ padding: '20px', color: '#94a3b8' }}>No profile records found.</div>
+          <div style={{ padding: '16px', color: '#94a3b8', fontSize: '12px' }}>No profile records found.</div>
         ) : (
           <div style={responsiveTableWrapper}>
-            <table style={{ width: '100%', minWidth: '550px', borderCollapse: 'collapse', fontSize: '14px' }}>
+            <table style={{ width: '100%', minWidth: '480px', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-                  <th style={{ padding: '10px' }}>Employee Name</th>
-                  <th style={{ padding: '10px' }}>Email</th>
-                  <th style={{ padding: '10px' }}>Department</th>
-                  <th style={{ padding: '10px' }}>Role</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>Actions</th>
+                  <th style={{ padding: '8px' }}>Employee</th>
+                  <th style={{ padding: '8px' }}>Email</th>
+                  <th style={{ padding: '8px' }}>Dept</th>
+                  <th style={{ padding: '8px' }}>Role</th>
+                  <th style={{ padding: '8px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1070,22 +1069,23 @@ function AdminUserRoleManagementView() {
                   const normRole = String(u.role || 'user').toLowerCase().trim();
                   return (
                     <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '10px', fontWeight: 'bold', color: '#2563eb', cursor: 'pointer' }} onClick={() => setSelectedUserModal(u)}>
-                        {u.full_name || u.name || 'Unnamed Employee'}
+                      <td style={{ padding: '8px', fontWeight: 'bold', color: '#2563eb', cursor: 'pointer', wordBreak: 'break-word' }} onClick={() => setSelectedUserModal(u)}>
+                        {u.full_name || u.name || 'Unnamed'}
                       </td>
-                      <td style={{ padding: '10px', color: '#64748b' }}>{u.email}</td>
-                      <td style={{ padding: '10px', color: '#0f172a' }}>🏢 {u.department || 'englite'}</td>
-                      <td style={{ padding: '10px' }}>
+                      <td style={{ padding: '8px', color: '#64748b', wordBreak: 'break-all' }}>{u.email}</td>
+                      <td style={{ padding: '8px', color: '#0f172a' }}>🏢 {u.department || 'englite'}</td>
+                      <td style={{ padding: '8px' }}>
                         <span style={{
-                          padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold',
+                          padding: '3px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 'bold',
                           backgroundColor: normRole === 'manager' ? '#e0e7ff' : normRole === 'admin' ? '#f3e8ff' : '#dcfce7',
-                          color: normRole === 'manager' ? '#3730a3' : normRole === 'admin' ? '#7e22ce' : '#15803d'
+                          color: normRole === 'manager' ? '#3730a3' : normRole === 'admin' ? '#7e22ce' : '#15803d',
+                          whiteSpace: 'nowrap'
                         }}>
                           {normRole.toUpperCase()}
                         </span>
                       </td>
-                      <td style={{ padding: '10px', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                      <td style={{ padding: '8px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
                           <button onClick={() => setSelectedUserModal(u)} style={editBtnStyle}>
                             👁️ View
                           </button>
@@ -1175,12 +1175,12 @@ function ManagerStaffListView({ currentDepartment }) {
 
   return (
     <div>
-      <h2>👥 Department Staff Roster</h2>
+      <h2 style={viewHeadingStyle}>👥 Department Staff Roster</h2>
       <p style={subTextStyle}>View employees assigned under your department management.</p>
 
-      {msg && <div style={{ ...successBannerStyle, marginBottom: '16px' }}>{msg}</div>}
+      {msg && <div style={{ ...successBannerStyle, marginBottom: '14px' }}>{msg}</div>}
 
-      <div style={{ marginBottom: '16px', maxWidth: '400px' }}>
+      <div style={{ marginBottom: '14px', maxWidth: '400px' }}>
         <input
           type="text"
           placeholder="🔍 Search department staff..."
@@ -1192,27 +1192,27 @@ function ManagerStaffListView({ currentDepartment }) {
 
       <div style={cardStyle}>
         {loading ? (
-          <div style={{ padding: '20px', color: '#64748b' }}>Loading department staff...</div>
+          <div style={{ padding: '16px', color: '#64748b', fontSize: '12px' }}>Loading department staff...</div>
         ) : filteredStaff.length === 0 ? (
-          <div style={{ padding: '20px', color: '#94a3b8' }}>No staff members found.</div>
+          <div style={{ padding: '16px', color: '#94a3b8', fontSize: '12px' }}>No staff members found.</div>
         ) : (
           <div style={responsiveTableWrapper}>
-            <table style={{ width: '100%', minWidth: '500px', borderCollapse: 'collapse', fontSize: '14px' }}>
+            <table style={{ width: '100%', minWidth: '450px', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-                  <th style={{ padding: '10px' }}>Staff Name</th>
-                  <th style={{ padding: '10px' }}>Email</th>
-                  <th style={{ padding: '10px' }}>Contact Phone</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>Management Action</th>
+                  <th style={{ padding: '8px' }}>Staff Name</th>
+                  <th style={{ padding: '8px' }}>Email</th>
+                  <th style={{ padding: '8px' }}>Phone</th>
+                  <th style={{ padding: '8px', textAlign: 'right' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredStaff.map((u) => (
                   <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '10px', fontWeight: 'bold', color: '#0f172a' }}>{u.full_name || u.name}</td>
-                    <td style={{ padding: '10px', color: '#64748b' }}>{u.email}</td>
-                    <td style={{ padding: '10px', color: '#0f172a' }}>📞 {u.phone || 'N/A'}</td>
-                    <td style={{ padding: '10px', textAlign: 'right' }}>
+                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#0f172a', wordBreak: 'break-word' }}>{u.full_name || u.name}</td>
+                    <td style={{ padding: '8px', color: '#64748b', wordBreak: 'break-all' }}>{u.email}</td>
+                    <td style={{ padding: '8px', color: '#0f172a' }}>📞 {u.phone || 'N/A'}</td>
+                    <td style={{ padding: '8px', textAlign: 'right' }}>
                       <button onClick={() => setUserToRemove(u)} style={declineBtnStyle}>
                         ❌ Remove
                       </button>
@@ -1227,19 +1227,19 @@ function ManagerStaffListView({ currentDepartment }) {
 
       {userToRemove && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...modalBoxStyle, maxWidth: '450px' }}>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#0f172a' }}>
+          <div style={{ ...modalBoxStyle, maxWidth: '400px' }}>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#0f172a' }}>
               ⚠️ Confirm Staff Removal
             </h3>
-            <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#64748b', lineHeight: '1.5' }}>
+            <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: '#64748b', lineHeight: '1.4' }}>
               Are you sure you want to remove <strong>{userToRemove.full_name || userToRemove.name}</strong> from the department roster list?
             </p>
 
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setUserToRemove(null)} style={{ ...editBtnStyle, padding: '8px 16px' }}>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setUserToRemove(null)} style={{ ...editBtnStyle, padding: '6px 12px' }}>
                 Cancel
               </button>
-              <button onClick={confirmRemoval} style={{ ...declineBtnStyle, padding: '8px 16px' }}>
+              <button onClick={confirmRemoval} style={{ ...declineBtnStyle, padding: '6px 12px' }}>
                 Yes, Remove Staff
               </button>
             </div>
@@ -1269,15 +1269,15 @@ function AdminEmployeeProfileModal({ userData, onClose, onSave }) {
 
   return (
     <div style={modalOverlayStyle}>
-      <div style={{ ...modalBoxStyle, maxWidth: '500px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>
-            👤 Employee Profile: {profile.full_name}
+      <div style={{ ...modalBoxStyle, maxWidth: '480px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <h2 style={{ margin: 0, fontSize: '16px', color: '#0f172a', wordBreak: 'break-word' }}>
+            👤 Employee: {profile.full_name}
           </h2>
           <button onClick={onClose} style={closeModalBtnStyle}>✕ Close</button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
             <label style={labelStyle}>Full Name</label>
             <input type="text" value={profile.full_name} onChange={(e) => setProfile({ ...profile, full_name: e.target.value })} required style={inputStyle} />
@@ -1298,7 +1298,7 @@ function AdminEmployeeProfileModal({ userData, onClose, onSave }) {
             <input type="text" value={profile.address} onChange={(e) => setProfile({ ...profile, address: e.target.value })} required style={inputStyle} />
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '12px' }}>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '8px' }}>
             <button type="button" onClick={onClose} style={{ ...declineBtnStyle, backgroundColor: '#cbd5e1' }}>Cancel</button>
             <button type="submit" style={approveBtnStyle}>Save Changes 💾</button>
           </div>
@@ -1365,12 +1365,12 @@ function AdminReportSchedulerView() {
 
   return (
     <div>
-      <h2>📧 Automated Timesheet Reports</h2>
+      <h2 style={viewHeadingStyle}>📧 Automated Timesheet Reports</h2>
       <p style={subTextStyle}>Configure recipient emails, dispatch days, and exact times for automated report delivery.</p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
         <div style={cardStyle}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#0f172a' }}>➕ Schedule New Report</h3>
+          <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#0f172a' }}>➕ Schedule New Report</h3>
           
           <form onSubmit={handleCreateSchedule}>
             <label style={labelStyle}>Recipient Email Address</label>
@@ -1380,21 +1380,21 @@ function AdminReportSchedulerView() {
               value={recipientEmail}
               onChange={(e) => setRecipientEmail(e.target.value)}
               required
-              style={{ ...inputStyle, width: '100%', marginBottom: '12px' }}
+              style={{ ...inputStyle, width: '100%', marginBottom: '10px' }}
             />
 
             <label style={labelStyle}>Report Frequency</label>
             <select
               value={frequency}
               onChange={(e) => setFrequency(e.target.value)}
-              style={{ ...inputStyle, width: '100%', marginBottom: '12px' }}
+              style={{ ...inputStyle, width: '100%', marginBottom: '10px' }}
             >
               <option value="Weekly">📅 Weekly Summary</option>
               <option value="Bi-Weekly">🗓️ Bi-Weekly Summary</option>
               <option value="Monthly">📊 Monthly Payroll Report</option>
             </select>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
               <div>
                 <label style={labelStyle}>Dispatch Day</label>
                 <select
@@ -1423,25 +1423,25 @@ function AdminReportSchedulerView() {
             <button type="submit" style={btnStyle('#2563eb')}>Save Schedule 🚀</button>
           </form>
 
-          {msg && <div style={{ ...successBannerStyle, marginTop: '16px' }}>{msg}</div>}
+          {msg && <div style={{ ...successBannerStyle, marginTop: '14px' }}>{msg}</div>}
         </div>
 
         <div style={cardStyle}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#0f172a' }}>📋 Active Scheduled Reports</h3>
+          <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#0f172a' }}>📋 Active Scheduled Reports</h3>
 
           {schedules.length === 0 ? (
-            <div style={{ color: '#94a3b8', fontSize: '13px' }}>No active report schedules configured in Supabase.</div>
+            <div style={{ color: '#94a3b8', fontSize: '12px' }}>No active report schedules configured in Supabase.</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {schedules.map(sch => (
-                <div key={sch.id} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div key={sch.id} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#0f172a' }}>{sch.email}</div>
-                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a', wordBreak: 'break-all' }}>{sch.email}</div>
+                    <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
                       ⏰ {sch.freq} on <strong>{sch.day}s at {sch.time}</strong>
                     </div>
                   </div>
-                  <button onClick={() => handleDeleteSchedule(sch.id)} style={{ ...declineBtnStyle, padding: '4px 8px', fontSize: '11px' }}>
+                  <button onClick={() => handleDeleteSchedule(sch.id)} style={{ ...declineBtnStyle, padding: '4px 6px', fontSize: '10px' }}>
                     Remove
                   </button>
                 </div>
@@ -1584,7 +1584,7 @@ function DepartmentTimeLogsView({ department }) {
 
       if (error) throw error;
 
-      setMsg({ text: `✅ Approved all shift logs for ${empSummary.name}!`, isError: false });
+      setMsg({ text: `✅ Approved shift logs for ${empSummary.name}!`, isError: false });
       await fetchTimeLogs();
     } catch (err) {
       setMsg({ text: `❌ Approval failed: ${err.message}`, isError: true });
@@ -1611,7 +1611,7 @@ function DepartmentTimeLogsView({ department }) {
       const { error } = await query;
       if (error) throw error;
 
-      setMsg({ text: '🚀 All time logs for this week have been bulk approved!', isError: false });
+      setMsg({ text: '🚀 Time logs for this week bulk approved!', isError: false });
       await fetchTimeLogs();
     } catch (err) {
       setMsg({ text: `❌ Bulk approval failed: ${err.message}`, isError: true });
@@ -1654,7 +1654,7 @@ function DepartmentTimeLogsView({ department }) {
 
       if (error) throw error;
 
-      setMsg({ text: '✅ Shift timestamps saved to database!', isError: false });
+      setMsg({ text: '✅ Timestamps updated!', isError: false });
       setEditingLogId(null);
       await fetchTimeLogs();
     } catch (err) {
@@ -1675,19 +1675,19 @@ function DepartmentTimeLogsView({ department }) {
   return (
     <div>
       <div style={weekNavHeaderStyle}>
-        <button onClick={() => changeWeek(-1)} style={weekNavBtnStyle}>◀ Prev Week</button>
+        <button onClick={() => changeWeek(-1)} style={weekNavBtnStyle}>◀ Prev</button>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a' }}>
+          <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#0f172a' }}>
             Week: {currentWeekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
           </div>
           <button onClick={resetToCurrentWeek} style={todayBtnStyle}>Jump to Current Week</button>
         </div>
-        <button onClick={() => changeWeek(1)} style={weekNavBtnStyle}>Next Week ▶</button>
+        <button onClick={() => changeWeek(1)} style={weekNavBtnStyle}>Next ▶</button>
       </div>
 
       {msg.text && (
         <div style={{
-          padding: '12px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', marginBottom: '16px',
+          padding: '10px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', marginBottom: '14px',
           backgroundColor: msg.isError ? '#fef2f2' : '#f0fdf4',
           color: msg.isError ? '#991b1b' : '#15803d',
           border: `1px solid ${msg.isError ? '#fca5a5' : '#bbf7d0'}`
@@ -1696,33 +1696,33 @@ function DepartmentTimeLogsView({ department }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-        <h3 style={{ margin: 0, fontSize: '16px', color: '#0f172a' }}>
-          📋 Department Timesheet Records ({department})
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+        <h3 style={{ margin: 0, fontSize: '15px', color: '#0f172a' }}>
+          📋 Department Timesheet ({department})
         </h3>
         <button 
           onClick={handleBulkApproveWeek} 
           disabled={processing || weeklySummaries.length === 0} 
           style={bulkApproveBtnStyle}
         >
-          {processing ? 'Processing...' : '⚡ Bulk Approve Week'}
+          {processing ? 'Processing...' : '⚡ Bulk Approve'}
         </button>
       </div>
 
       <div style={cardStyle}>
         {loading ? (
-          <div style={{ padding: '20px', color: '#64748b' }}>Loading timesheets from database...</div>
+          <div style={{ padding: '16px', color: '#64748b', fontSize: '12px' }}>Loading timesheets...</div>
         ) : weeklySummaries.length === 0 ? (
-          <div style={{ padding: '20px', color: '#94a3b8' }}>No shift logs recorded in database for this week.</div>
+          <div style={{ padding: '16px', color: '#94a3b8', fontSize: '12px' }}>No shift logs for this week.</div>
         ) : (
           <div style={responsiveTableWrapper}>
-            <table style={{ width: '100%', minWidth: '550px', borderCollapse: 'collapse', fontSize: '14px' }}>
+            <table style={{ width: '100%', minWidth: '480px', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-                  <th style={{ padding: '10px' }}>Employee</th>
-                  <th style={{ padding: '10px' }}>Weekly Hours</th>
-                  <th style={{ padding: '10px' }}>Status</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>Actions</th>
+                  <th style={{ padding: '8px' }}>Employee</th>
+                  <th style={{ padding: '8px' }}>Weekly Hrs</th>
+                  <th style={{ padding: '8px' }}>Status</th>
+                  <th style={{ padding: '8px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1732,23 +1732,24 @@ function DepartmentTimeLogsView({ department }) {
                   return (
                     <React.Fragment key={emp.id}>
                       <tr style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: isOpen ? '#f8fafc' : '#ffffff' }}>
-                        <td onClick={() => toggleExpand(emp.id)} style={{ padding: '12px 10px', fontWeight: 'bold', color: '#2563eb', cursor: 'pointer' }}>
+                        <td onClick={() => toggleExpand(emp.id)} style={{ padding: '10px 8px', fontWeight: 'bold', color: '#2563eb', cursor: 'pointer', wordBreak: 'break-word' }}>
                           {isOpen ? '▼ ' : '▶ '} {emp.name}
                         </td>
-                        <td style={{ padding: '10px', fontWeight: 'bold', color: '#0f172a' }}>
+                        <td style={{ padding: '8px', fontWeight: 'bold', color: '#0f172a' }}>
                           {emp.weeklyTotalHours} hrs
                         </td>
-                        <td style={{ padding: '10px' }}>
+                        <td style={{ padding: '8px' }}>
                           <span style={{
-                            padding: '4px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold',
+                            padding: '3px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 'bold',
                             backgroundColor: emp.status === 'Approved' ? '#dcfce7' : '#fef3c7',
-                            color: emp.status === 'Approved' ? '#15803d' : '#b45309'
+                            color: emp.status === 'Approved' ? '#15803d' : '#b45309',
+                            whiteSpace: 'nowrap'
                           }}>
                             {emp.status}
                           </span>
                         </td>
-                        <td style={{ padding: '10px', textAlign: 'right' }}>
-                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                        <td style={{ padding: '8px', textAlign: 'right' }}>
+                          <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
                             <button onClick={() => toggleExpand(emp.id)} style={editBtnStyle}>
                               {isOpen ? 'Close' : '🔍 Shifts'}
                             </button>
@@ -1763,29 +1764,29 @@ function DepartmentTimeLogsView({ department }) {
 
                       {isOpen && (
                         <tr>
-                          <td colSpan="4" style={{ padding: '12px 10px', backgroundColor: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
-                            <div style={{ backgroundColor: '#ffffff', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1' }}>
-                              <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#0f172a' }}>
-                                🗓️ Shift Logs for <strong>{emp.name}</strong>
+                          <td colSpan="4" style={{ padding: '8px', backgroundColor: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
+                            <div style={{ backgroundColor: '#ffffff', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                              <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#0f172a' }}>
+                                🗓️ Shifts for <strong>{emp.name}</strong>
                               </h4>
 
                               <div style={responsiveTableWrapper}>
-                                <table style={{ width: '100%', minWidth: '450px', borderCollapse: 'collapse', fontSize: '13px' }}>
+                                <table style={{ width: '100%', minWidth: '400px', borderCollapse: 'collapse', fontSize: '12px' }}>
                                   <thead>
                                     <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1', textAlign: 'left' }}>
-                                      <th style={{ padding: '8px' }}>Day & Date</th>
-                                      <th style={{ padding: '8px' }}>Clock In</th>
-                                      <th style={{ padding: '8px' }}>Clock Out</th>
-                                      <th style={{ padding: '8px' }}>Paid Time</th>
-                                      <th style={{ padding: '8px', textAlign: 'right' }}>Edit Time</th>
+                                      <th style={{ padding: '6px' }}>Date</th>
+                                      <th style={{ padding: '6px' }}>In</th>
+                                      <th style={{ padding: '6px' }}>Out</th>
+                                      <th style={{ padding: '6px' }}>Hrs</th>
+                                      <th style={{ padding: '6px', textAlign: 'right' }}>Edit</th>
                                     </tr>
                                   </thead>
                                   <tbody>
                                     {emp.shifts.map((s) => (
                                       <tr key={s.logId} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                        <td style={{ padding: '8px', fontWeight: 'bold', color: '#0f172a' }}>{s.day}, {s.date}</td>
+                                        <td style={{ padding: '6px', fontWeight: 'bold', color: '#0f172a', whiteSpace: 'nowrap' }}>{s.day}, {s.date}</td>
                                         
-                                        <td style={{ padding: '8px', color: '#15803d', fontWeight: 'bold' }}>
+                                        <td style={{ padding: '6px', color: '#15803d', fontWeight: 'bold' }}>
                                           {editingLogId === s.logId ? (
                                             <input
                                               type="time"
@@ -1798,7 +1799,7 @@ function DepartmentTimeLogsView({ department }) {
                                           )}
                                         </td>
 
-                                        <td style={{ padding: '8px', color: '#b91c1c', fontWeight: 'bold' }}>
+                                        <td style={{ padding: '6px', color: '#b91c1c', fontWeight: 'bold' }}>
                                           {editingLogId === s.logId ? (
                                             <input
                                               type="time"
@@ -1811,11 +1812,11 @@ function DepartmentTimeLogsView({ department }) {
                                           )}
                                         </td>
 
-                                        <td style={{ padding: '8px', fontWeight: 'bold', color: '#0f172a' }}>{s.paidHours} hrs</td>
+                                        <td style={{ padding: '6px', fontWeight: 'bold', color: '#0f172a' }}>{s.paidHours}</td>
 
-                                        <td style={{ padding: '8px', textAlign: 'right' }}>
+                                        <td style={{ padding: '6px', textAlign: 'right' }}>
                                           {editingLogId === s.logId ? (
-                                            <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
+                                            <div style={{ display: 'flex', gap: '3px', justifyContent: 'flex-end' }}>
                                               <button onClick={() => setEditingLogId(null)} style={editBtnStyle}>Cancel</button>
                                               <button onClick={() => saveShiftTimeEdit(s)} style={approveBtnStyle}>Save 💾</button>
                                             </div>
@@ -1921,12 +1922,12 @@ function UserProfileSettingsView({ user, role }) {
 
   return (
     <div>
-      <h2>⚙️ {role} Account Profile & Settings</h2>
+      <h2 style={viewHeadingStyle}>⚙️ {role} Account Profile & Settings</h2>
       <p style={subTextStyle}>Manage your personal contact details and password security.</p>
 
       {msg.text && (
         <div style={{
-          padding: '12px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', marginBottom: '20px',
+          padding: '10px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', marginBottom: '16px',
           backgroundColor: msg.isError ? '#fef2f2' : '#f0fdf4', color: msg.isError ? '#991b1b' : '#15803d',
           border: `1px solid ${msg.isError ? '#fca5a5' : '#bbf7d0'}`
         }}>
@@ -1935,14 +1936,14 @@ function UserProfileSettingsView({ user, role }) {
       )}
 
       <div style={{ ...cardStyle, maxWidth: '600px' }}>
-        <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
             <h3 style={sectionHeadingStyle}>1. Personal & Contact Details</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '10px' }}>
               <div><label style={labelStyle}>Full Name</label><input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required style={inputStyle} /></div>
               <div><label style={labelStyle}>Email Address</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} /></div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
               <div><label style={labelStyle}>Address</label><input type="text" value={address} onChange={(e) => setAddress(e.target.value)} required style={inputStyle} /></div>
               <div><label style={labelStyle}>Phone Number</label><input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} required style={inputStyle} /></div>
             </div>
@@ -1952,17 +1953,17 @@ function UserProfileSettingsView({ user, role }) {
 
           <div>
             <h3 style={sectionHeadingStyle}>2. Password Security</h3>
-            <div style={{ marginBottom: '12px' }}>
+            <div style={{ marginBottom: '10px' }}>
               <label style={labelStyle}>Current Password</label>
               <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} style={inputStyle} />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
               <div><label style={labelStyle}>New Password</label><input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} /></div>
               <div><label style={labelStyle}>Confirm New Password</label><input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} style={inputStyle} /></div>
             </div>
           </div>
 
-          <button type="submit" disabled={saving} style={{ ...btnStyle('#2563eb'), marginTop: '8px' }}>
+          <button type="submit" disabled={saving} style={{ ...btnStyle('#2563eb'), marginTop: '4px' }}>
             {saving ? 'Saving...' : 'Save Details 💾'}
           </button>
         </form>
@@ -1972,50 +1973,50 @@ function UserProfileSettingsView({ user, role }) {
 }
 
 /* =========================================
-   RESPONSIVE INLINE STYLES
+   RESPONSIVE & ADAPTIVE INLINE STYLES
    ========================================= */
 const layoutStyle = { minHeight: '100vh', backgroundColor: '#f1f5f9', fontFamily: 'sans-serif' };
-const headerStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap', gap: '12px' };
-const logoStyle = { fontSize: '20px', fontWeight: 'bold', color: '#0f172a' };
-const mainContentStyle = { padding: '16px', maxWidth: '1200px', margin: '0 auto' };
-const dashboardGrid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', alignItems: 'start' };
-const sidebarStyle = { display: 'flex', flexDirection: 'row', overflowX: 'auto', WebkitOverflowScrolling: 'touch', gap: '8px', paddingBottom: '8px' };
-const sidebarHeader = { display: 'none' };
-const panelStyle = { backgroundColor: '#ffffff', padding: '16px', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', minHeight: '400px', width: '100%', boxSizing: 'border-box' };
-const cardStyle = { backgroundColor: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' };
-const subTextStyle = { color: '#64748b', fontSize: '13px', marginTop: '4px', marginBottom: '20px' };
-const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' };
-const inputStyle = { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' };
-const successBannerStyle = { padding: '12px 14px', backgroundColor: '#dcfce7', color: '#15803d', borderRadius: '8px', fontSize: '13px', fontWeight: '500' };
+const headerStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap', gap: '8px' };
+const logoStyle = { fontSize: '18px', fontWeight: 'bold', color: '#0f172a' };
+const viewHeadingStyle = { margin: 0, fontSize: '18px', color: '#0f172a', wordBreak: 'break-word' };
+const mainContentStyle = { padding: '12px', maxWidth: '1200px', margin: '0 auto', boxSizing: 'border-box' };
+const dashboardGrid = { display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' };
+const sidebarStyle = { display: 'flex', flexDirection: 'row', overflowX: 'auto', WebkitOverflowScrolling: 'touch', gap: '6px', paddingBottom: '4px', width: '100%', boxSizing: 'border-box' };
+const panelStyle = { backgroundColor: '#ffffff', padding: '14px', borderRadius: '14px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', minHeight: '380px', width: '100%', boxSizing: 'border-box' };
+const cardStyle = { backgroundColor: '#f8fafc', padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0', boxSizing: 'border-box' };
+const subTextStyle = { color: '#64748b', fontSize: '12px', marginTop: '2px', marginBottom: '16px', wordBreak: 'break-word' };
+const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 'bold', color: '#475569', marginBottom: '3px' };
+const inputStyle = { width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', boxSizing: 'border-box', outline: 'none' };
+const successBannerStyle = { padding: '10px 12px', backgroundColor: '#dcfce7', color: '#15803d', borderRadius: '8px', fontSize: '12px', fontWeight: '500', wordBreak: 'break-word' };
 
-const weekNavHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', backgroundColor: '#f1f5f9', borderRadius: '10px', marginBottom: '16px', border: '1px solid #cbd5e1', flexWrap: 'wrap', gap: '8px' };
-const weekNavBtnStyle = { padding: '6px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', color: '#334155' };
-const todayBtnStyle = { background: 'none', border: 'none', color: '#2563eb', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' };
+const weekNavHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', backgroundColor: '#f1f5f9', borderRadius: '10px', marginBottom: '14px', border: '1px solid #cbd5e1', flexWrap: 'wrap', gap: '6px' };
+const weekNavBtnStyle = { padding: '5px 10px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', color: '#334155' };
+const todayBtnStyle = { background: 'none', border: 'none', color: '#2563eb', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' };
 
-const bulkApproveBtnStyle = { padding: '8px 14px', backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' };
-const approveBtnStyle = { padding: '6px 10px', backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' };
-const declineBtnStyle = { padding: '6px 10px', backgroundColor: '#dc2626', color: '#ffffff', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' };
-const editBtnStyle = { padding: '6px 10px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' };
-const promoteBtnStyle = { padding: '6px 10px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' };
-const demoteBtnStyle = { padding: '6px 10px', backgroundColor: '#e2e8f0', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' };
+const bulkApproveBtnStyle = { padding: '6px 12px', backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px' };
+const approveBtnStyle = { padding: '5px 8px', backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' };
+const declineBtnStyle = { padding: '5px 8px', backgroundColor: '#dc2626', color: '#ffffff', border: 'none', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' };
+const editBtnStyle = { padding: '5px 8px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' };
+const promoteBtnStyle = { padding: '5px 8px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' };
+const demoteBtnStyle = { padding: '5px 8px', backgroundColor: '#e2e8f0', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' };
 
-const sectionHeadingStyle = { margin: '0 0 12px 0', fontSize: '14px', color: '#0f172a', borderLeft: '3px solid #2563eb', paddingLeft: '8px' };
+const sectionHeadingStyle = { margin: '0 0 10px 0', fontSize: '13px', color: '#0f172a', borderLeft: '3px solid #2563eb', paddingLeft: '6px' };
 const dividerStyle = { border: 'none', borderTop: '1px solid #e2e8f0', margin: '4px 0' };
 
-const modalOverlayStyle = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' };
-const modalBoxStyle = { backgroundColor: '#ffffff', borderRadius: '16px', padding: '20px', width: '100%', maxWidth: '600px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', boxSizing: 'border-box' };
-const closeModalBtnStyle = { background: 'none', border: 'none', color: '#64748b', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' };
+const modalOverlayStyle = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '12px' };
+const modalBoxStyle = { backgroundColor: '#ffffff', borderRadius: '14px', padding: '16px', width: '100%', maxWidth: '500px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', boxSizing: 'border-box' };
+const closeModalBtnStyle = { background: 'none', border: 'none', color: '#64748b', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' };
 
 const loginWrapperStyle = { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '70vh' };
-const loginCardStyle = { backgroundColor: '#ffffff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '380px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0', boxSizing: 'border-box' };
-const loginBtnStyle = { width: '100%', padding: '12px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' };
-const logoutBtnStyle = { padding: '6px 12px', backgroundColor: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' };
-const errorAlertStyle = { padding: '10px 12px', backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fca5a5', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', marginBottom: '16px' };
-const timeInputStyle = { padding: '4px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '12px', fontWeight: 'bold' };
+const loginCardStyle = { backgroundColor: '#ffffff', borderRadius: '16px', padding: '20px', width: '100%', maxWidth: '360px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0', boxSizing: 'border-box' };
+const loginBtnStyle = { width: '100%', padding: '10px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' };
+const logoutBtnStyle = { padding: '5px 10px', backgroundColor: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' };
+const errorAlertStyle = { padding: '8px 10px', backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fca5a5', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', marginBottom: '12px', wordBreak: 'break-word' };
+const timeInputStyle = { padding: '3px 5px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '11px', fontWeight: 'bold' };
 const responsiveTableWrapper = { width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' };
 
 const navBtn = (isActive) => ({
-  padding: '10px 14px',
+  padding: '8px 12px',
   whiteSpace: 'nowrap',
   flexShrink: 0,
   borderRadius: '8px',
@@ -2023,30 +2024,30 @@ const navBtn = (isActive) => ({
   backgroundColor: isActive ? '#e0e7ff' : '#ffffff',
   color: isActive ? '#3730a3' : '#475569',
   fontWeight: isActive ? 'bold' : '500',
-  fontSize: '13px',
+  fontSize: '12px',
   cursor: 'pointer',
   boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
 });
 
 const btnStyle = (color) => ({
-  padding: '10px 16px',
+  padding: '8px 14px',
   backgroundColor: color,
   color: '#fff',
   border: 'none',
   borderRadius: '8px',
   fontWeight: 'bold',
   cursor: 'pointer',
-  fontSize: '13px',
+  fontSize: '12px',
 });
 
 const badgeStyle = (role) => {
   const normRole = String(role || 'user').toLowerCase().trim();
   return {
-    padding: '4px 10px',
+    padding: '3px 8px',
     backgroundColor: normRole === 'admin' ? '#f3e8ff' : normRole === 'manager' ? '#e0e7ff' : '#dcfce7',
     color: normRole === 'admin' ? '#7e22ce' : normRole === 'manager' ? '#3730a3' : '#15803d',
-    borderRadius: '20px',
-    fontSize: '11px',
+    borderRadius: '16px',
+    fontSize: '10px',
     fontWeight: 'bold',
   };
 };
