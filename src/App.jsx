@@ -498,9 +498,8 @@ function UserDashboard({ currentUser }) {
     </div>
   );
 }
-
 /* =========================================
-   INSTANT STAFF AVAILABILITY VIEW (SYNCED WITH STAFF UPDATES)
+   INSTANT STAFF AVAILABILITY VIEW (SYNCED)
    ========================================= */
 function ManagerInstantAvailabilityView({ department, location }) {
   const [currentWeekStart, setCurrentWeekStart] = useState(getStartOfWeek(new Date()));
@@ -529,31 +528,33 @@ function ManagerInstantAvailabilityView({ department, location }) {
     fetchAvailableStaff();
   }, [department, currentWeekStart, selectedDay]);
 
- const fetchAvailableStaff = async () => {
+  const fetchAvailableStaff = async () => {
     setLoading(true);
     const weekStartStr = currentWeekStart.toISOString().split('T')[0];
 
     try {
-      // 1. Fetch profiles cleanly without strict role/dept blockers
-      let { data: profiles, error: pErr } = await supabase
+      // 1. Fetch all registered user profiles
+      const { data: profiles, error: pErr } = await supabase
         .from('profiles')
         .select('id, full_name, name, email, department, role');
 
       if (pErr) throw pErr;
 
-      // Filter out admins locally to avoid query syntax issues
-      let activeStaff = (profiles || []).filter(p => String(p.role).toLowerCase() !== 'admin');
+      // Filter out system admins locally
+      let activeStaff = (profiles || []).filter(
+        (p) => String(p.role || '').toLowerCase() !== 'admin'
+      );
 
-      // Filter by department if a specific non-global department is selected
+      // Soft department filtering (case-insensitive & fallback for unassigned staff)
       if (department && department !== 'All Departments' && department !== 'All Staff') {
         const targetDept = department.trim().toLowerCase();
-        activeStaff = activeStaff.filter(p => {
-          if (!p.department) return true; // Include unassigned staff as fallbacks
+        activeStaff = activeStaff.filter((p) => {
+          if (!p.department) return true; // Include unassigned staff by default
           return p.department.trim().toLowerCase().includes(targetDept);
         });
       }
 
-      // 2. Fetch weekly availability logs for the chosen day
+      // 2. Fetch staff availability records for the selected day
       const { data: availData, error: aErr } = await supabase
         .from('weekly_availability')
         .select('*')
@@ -563,18 +564,18 @@ function ManagerInstantAvailabilityView({ department, location }) {
 
       // Create lookup map by user_id
       const availMap = {};
-      (availData || []).forEach(a => {
+      (availData || []).forEach((a) => {
         if (!a.week_start || a.week_start === weekStartStr) {
           availMap[a.user_id] = {
-            isAvailable: a.is_available ?? true,
+            isAvailable: Boolean(a.is_available),
             startTime: a.start_time ? String(a.start_time).slice(0, 5) : '08:30',
-            endTime: a.end_time ? String(a.end_time).slice(0, 5) : '16:30'
+            endTime: a.end_time ? String(a.end_time).slice(0, 5) : '16:30',
           };
         }
       });
 
-      // 3. Map availability directly onto the staff list
-      const processed = activeStaff.map(staff => {
+      // 3. Map availability preferences directly onto employee profiles
+      const processed = activeStaff.map((staff) => {
         const pref = availMap[staff.id];
         const isAvail = pref ? pref.isAvailable : true;
         const timing = pref ? `${pref.startTime} - ${pref.endTime}` : '08:30 - 16:30';
@@ -582,13 +583,13 @@ function ManagerInstantAvailabilityView({ department, location }) {
         return {
           ...staff,
           isAvailable: isAvail,
-          timing
+          timing,
         };
       });
 
       setStaffRoster(processed);
     } catch (err) {
-      console.error('Error in instant availability view:', err);
+      console.error('Error fetching instant availability staff:', err);
       setStaffRoster([]);
     } finally {
       setLoading(false);
@@ -617,9 +618,9 @@ function ManagerInstantAvailabilityView({ department, location }) {
       ]);
 
       if (error) throw error;
-      setMsg(`✅ Shift offer dispatched to ${staffMember.full_name || staffMember.name} for ${selectedDay} (${shiftDateStr})!`);
+      setMsg(`✅ Offer sent to ${staffMember.full_name || staffMember.name} for ${selectedDay} (${shiftDateStr})!`);
     } catch (err) {
-      setMsg(`❌ Failed to dispatch offer: ${err.message}`);
+      setMsg(`❌ Offer dispatch failed: ${err.message}`);
     } finally {
       setSendingId(null);
       setTimeout(() => setMsg(''), 4000);
@@ -632,7 +633,7 @@ function ManagerInstantAvailabilityView({ department, location }) {
   return (
     <div>
       <h2 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>⏱️ Instant Staff Availability & Shift Offers</h2>
-      <p style={{ color: '#64748b', fontSize: '12px', marginTop: '2px', marginBottom: '16px' }}>Select target week and day to inspect staff availability and send shift offers.</p>
+      <p style={{ color: '#64748b', fontSize: '12px', marginTop: '2px', marginBottom: '16px' }}>Select week and day to inspect availability and send shift invitations.</p>
 
       {msg && <div style={{ padding: '10px 12px', backgroundColor: '#dcfce7', color: '#15803d', borderRadius: '8px', fontSize: '12px', fontWeight: '500', marginBottom: '14px' }}>{msg}</div>}
 
@@ -692,7 +693,7 @@ function ManagerInstantAvailabilityView({ department, location }) {
                 </tr>
               </thead>
               <tbody>
-                {staffRoster.map(staff => (
+                {staffRoster.map((staff) => (
                   <tr key={staff.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                     <td style={{ padding: '8px', fontWeight: 'bold', color: '#0f172a', wordBreak: 'break-word' }}>{staff.full_name || staff.name || 'Unnamed Staff'}</td>
                     <td style={{ padding: '8px', color: '#64748b', wordBreak: 'break-all' }}>{staff.email}</td>
@@ -736,7 +737,6 @@ function ManagerInstantAvailabilityView({ department, location }) {
     </div>
   );
 }
-
 // Pending Shift Offers Component with Day Name Display
 function PendingOffersView({ user }) {
   const [shiftOffers, setShiftOffers] = useState([]);
