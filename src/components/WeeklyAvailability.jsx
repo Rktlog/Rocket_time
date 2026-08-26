@@ -11,7 +11,6 @@ export default function WeeklyAvailability({ user }) {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState({ text: '', isError: false });
 
-  // Timezone-safe local YYYY-MM-DD date formatter
   function formatLocalDate(d) {
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -35,18 +34,27 @@ export default function WeeklyAvailability({ user }) {
   };
 
   useEffect(() => {
-    if (user?.id) fetchAvailability();
+    fetchAvailability();
   }, [user, currentWeekStart]);
 
   const fetchAvailability = async () => {
     setLoading(true);
     try {
+      // Fetch current logged in user ID directly from active auth session
+      const { data: authData } = await supabase.auth.getUser();
+      const activeUserId = user?.id || authData?.user?.id;
+
+      if (!activeUserId) {
+        setLoading(false);
+        return;
+      }
+
       const weekStartStr = formatLocalDate(currentWeekStart);
       const { data, error } = await supabase
         .from('weekly_availability')
         .select('*')
-        .eq('user_id', user.id)
-        .or(`week_start.eq.${weekStartStr},week_start.is.null`);
+        .eq('user_id', activeUserId)
+        .eq('week_start', weekStartStr);
 
       if (error) throw error;
 
@@ -61,13 +69,10 @@ export default function WeeklyAvailability({ user }) {
 
       (data || []).forEach(item => {
         if (item && item.day) {
-          const rawStart = item.start_time ? String(item.start_time).slice(0, 5) : '08:30';
-          const rawEnd = item.end_time ? String(item.end_time).slice(0, 5) : '16:30';
-
           availMap[item.day] = {
             isAvailable: Boolean(item.is_available),
-            startTime: rawStart,
-            endTime: rawEnd
+            startTime: item.start_time ? String(item.start_time).slice(0, 5) : '08:30',
+            endTime: item.end_time ? String(item.end_time).slice(0, 5) : '16:30'
           };
         }
       });
@@ -110,14 +115,20 @@ export default function WeeklyAvailability({ user }) {
 
   const handleSaveAvailability = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (!user?.id) return;
 
     setSaving(true);
     setMsg({ text: '', isError: false });
 
-    const weekStartStr = formatLocalDate(currentWeekStart);
-
     try {
+      const { data: authData } = await supabase.auth.getUser();
+      const activeUserId = user?.id || authData?.user?.id;
+
+      if (!activeUserId) {
+        throw new Error("No active authenticated user session found.");
+      }
+
+      const weekStartStr = formatLocalDate(currentWeekStart);
+
       const recordsToUpsert = DAYS.map(day => {
         const item = availability[day] || { isAvailable: true, startTime: '08:30', endTime: '16:30' };
         
@@ -125,7 +136,7 @@ export default function WeeklyAvailability({ user }) {
         const cleanEnd = item.endTime.length === 5 ? `${item.endTime}:00` : item.endTime;
 
         return {
-          user_id: user.id,
+          user_id: activeUserId,
           day,
           week_start: weekStartStr,
           is_available: item.isAvailable,
@@ -150,50 +161,6 @@ export default function WeeklyAvailability({ user }) {
     }
   };
 
-  const handleRepeatNextWeek = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    if (!user?.id) return;
-
-    setSaving(true);
-    setMsg({ text: '', isError: false });
-
-    const nextWeekStart = new Date(currentWeekStart);
-    nextWeekStart.setDate(nextWeekStart.getDate() + 7);
-    const nextWeekStartStr = formatLocalDate(nextWeekStart);
-
-    try {
-      const clonedRecords = DAYS.map(day => {
-        const item = availability[day] || { isAvailable: true, startTime: '08:30', endTime: '16:30' };
-        const cleanStart = item.startTime.length === 5 ? `${item.startTime}:00` : item.startTime;
-        const cleanEnd = item.endTime.length === 5 ? `${item.endTime}:00` : item.endTime;
-
-        return {
-          user_id: user.id,
-          day,
-          week_start: nextWeekStartStr,
-          is_available: item.isAvailable,
-          start_time: cleanStart,
-          end_time: cleanEnd,
-          updated_at: new Date().toISOString()
-        };
-      });
-
-      const { error } = await supabase
-        .from('weekly_availability')
-        .upsert(clonedRecords, { onConflict: 'user_id, day, week_start' });
-
-      if (error) throw error;
-
-      setMsg({ text: '🔄 Current availability copied to next week!', isError: false });
-    } catch (err) {
-      console.error(err);
-      setMsg({ text: `❌ Repeat failed: ${err.message}`, isError: true });
-    } finally {
-      setSaving(false);
-      setTimeout(() => setMsg({ text: '', isError: false }), 4000);
-    }
-  };
-
   const weekEnd = new Date(currentWeekStart);
   weekEnd.setDate(weekEnd.getDate() + 6);
 
@@ -207,14 +174,9 @@ export default function WeeklyAvailability({ user }) {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button type="button" onClick={handleSaveAvailability} disabled={saving} style={primaryBtnStyle}>
-            💾 Save
-          </button>
-          <button type="button" onClick={handleRepeatNextWeek} disabled={saving} style={secondaryBtnStyle}>
-            🔄 Repeat Next Week
-          </button>
-        </div>
+        <button type="button" onClick={handleSaveAvailability} disabled={saving} style={primaryBtnStyle}>
+          {saving ? 'Saving...' : '💾 Save Availability'}
+        </button>
       </div>
 
       {msg.text && (
@@ -228,7 +190,6 @@ export default function WeeklyAvailability({ user }) {
         </div>
       )}
 
-      {/* WEEK SELECTION BAR */}
       <div style={weekNavHeaderStyle}>
         <button type="button" onClick={() => changeWeek(-1)} style={weekNavBtnStyle}>◀ Prev</button>
         <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#0f172a', textAlign: 'center' }}>
@@ -300,9 +261,7 @@ export default function WeeklyAvailability({ user }) {
   );
 }
 
-// Inline Styles
-const primaryBtnStyle = { padding: '6px 12px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' };
-const secondaryBtnStyle = { padding: '6px 12px', backgroundColor: '#ffffff', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' };
+const primaryBtnStyle = { padding: '8px 14px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' };
 const weekNavHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: '#f1f5f9', borderRadius: '8px', marginBottom: '12px', border: '1px solid #cbd5e1', flexWrap: 'wrap', gap: '6px' };
 const weekNavBtnStyle = { padding: '5px 10px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' };
 const timeInputStyle = { padding: '4px 6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', fontWeight: 'bold', color: '#0f172a', outline: 'none' };
