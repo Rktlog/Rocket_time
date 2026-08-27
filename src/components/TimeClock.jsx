@@ -38,7 +38,7 @@ export default function TimeClock({ employee, scheduledShift }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('time_logs')
         .select('*')
         .eq('user_id', user.id)
@@ -52,12 +52,10 @@ export default function TimeClock({ employee, scheduledShift }) {
         const now = new Date();
         const startEightPm = getEightPmCutoff(startTime);
 
-        // Check if shift is from a previous day OR if current time is past 8:00 PM on shift day
         const isFromPreviousDay = startTime.toDateString() !== now.toDateString();
         const isPastEightPm = now > startEightPm;
 
         if (isFromPreviousDay || isPastEightPm) {
-          // AUTO CLOCK-OUT FORGOTTEN SHIFT AT 8:00 PM
           const autoClockOutTime = startEightPm;
           const paidHours = calculatePaidHours(
             startTime, 
@@ -87,7 +85,6 @@ export default function TimeClock({ employee, scheduledShift }) {
           return;
         }
 
-        // Active shift is valid for today
         setActiveLogId(data.id);
         setClockInTime(startTime);
         setIsClockedIn(true);
@@ -110,7 +107,6 @@ export default function TimeClock({ employee, scheduledShift }) {
         const now = new Date();
         const eightPmCutoff = getEightPmCutoff(new Date(clockInTime));
 
-        // Auto clock out if shift crosses 8:00 PM limit in real-time
         if (now >= eightPmCutoff) {
           clearInterval(timer);
           triggerEightPmAutoClockOut();
@@ -184,7 +180,6 @@ export default function TimeClock({ employee, scheduledShift }) {
     return R * c;
   };
 
-  // Helper function to snap time within 10 min buffer
   const applyTenMinBuffer = (actualDate, scheduledDate) => {
     if (!scheduledDate) return actualDate;
     const diffMinutes = Math.abs(actualDate.getTime() - scheduledDate.getTime()) / (1000 * 60);
@@ -194,40 +189,35 @@ export default function TimeClock({ employee, scheduledShift }) {
     return actualDate;
   };
 
-  // Paid hours calculation rules
+  // UPDATED PAID HOURS CALCULATION
   const calculatePaidHours = (adjustedIn, adjustedOut, noBreakWorked, container) => {
     const totalMs = adjustedOut.getTime() - adjustedIn.getTime();
     const rawHours = totalMs / (1000 * 60 * 60);
 
     let calculatedPaidHours = 0;
 
-    if (rawHours >= 7.8 && rawHours <= 8.2) {
-      if (!noBreakWorked) {
-        calculatedPaidHours = 7.60;
-      } else {
-        calculatedPaidHours = 8.27;
-      }
+    if (!noBreakWorked) {
+      // Deduct 30 minutes (0.50 hours) for standard break
+      calculatedPaidHours = Math.max(0, rawHours - 0.50);
     } else {
-      if (!noBreakWorked) {
-        calculatedPaidHours = Math.max(0, rawHours - 0.67);
-      } else {
-        calculatedPaidHours = rawHours;
-      }
+      // Add 40 minutes (+0.6667 hours) bonus if no break was taken
+      calculatedPaidHours = rawHours + (40 / 60);
     }
 
-    if (container === '20ft') calculatedPaidHours += (10 / 60);
-    if (container === '40ft') calculatedPaidHours += (20 / 60);
+    // Container Bonuses
+    if (container === '20ft') calculatedPaidHours += (10 / 60); // +10 minutes
+    if (container === '40ft') calculatedPaidHours += (20 / 60); // +20 minutes
 
     return calculatedPaidHours.toFixed(2);
   };
 
-  // 3. Start Clock In -> Create running record in Supabase
+  // 3. Start Clock In -> Strict Geolocation Validation
   const handleStartClockIn = () => {
     setLoading(true);
-    setMsg({ text: '📡 Verifying your location...', isError: false });
+    setMsg({ text: '📡 Verifying GPS location...', isError: false });
 
     if (!navigator.geolocation) {
-      setMsg({ text: '❌ Geolocation is not supported by your device browser.', isError: true });
+      setMsg({ text: '❌ Geolocation is not supported by your browser or device.', isError: true });
       setLoading(false);
       return;
     }
@@ -236,6 +226,17 @@ export default function TimeClock({ employee, scheduledShift }) {
       async (position) => {
         const userLat = position.coords.latitude;
         const userLng = position.coords.longitude;
+        const accuracy = position.coords.accuracy;
+
+        if (accuracy > 1500) {
+          setMsg({
+            text: `❌ Low accuracy location detected (${Math.round(accuracy)}m). Please clock in using a GPS-enabled mobile device.`,
+            isError: true,
+          });
+          setLoading(false);
+          return;
+        }
+
         const distance = calculateDistanceKm(userLat, userLng, targetSite.lat, targetSite.lng);
 
         if (distance > targetSite.maxDistanceKm) {
@@ -282,10 +283,19 @@ export default function TimeClock({ employee, scheduledShift }) {
         }
       },
       (error) => {
-        setMsg({ text: `❌ Location access denied. Please enable GPS permissions to clock in.`, isError: true });
+        let errorReason = 'Location access denied or unavailable.';
+        if (error.code === error.PERMISSION_DENIED) {
+          errorReason = 'Location permission was denied. Please allow location access in your browser settings.';
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          errorReason = 'Location position unavailable. Please ensure GPS is enabled on your device.';
+        } else if (error.code === error.TIMEOUT) {
+          errorReason = 'Location request timed out. Please try again.';
+        }
+
+        setMsg({ text: `❌ ${errorReason}`, isError: true });
         setLoading(false);
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
@@ -295,7 +305,6 @@ export default function TimeClock({ employee, scheduledShift }) {
     let actualClockOutDate = new Date();
     const actualClockInDate = clockInTime || new Date(actualClockOutDate.getTime() - elapsedSeconds * 1000);
 
-    // Hard limit: Clock-out time cannot exceed 8:00 PM today
     const eightPmCutoff = getEightPmCutoff(actualClockInDate);
     if (actualClockOutDate > eightPmCutoff) {
       actualClockOutDate = eightPmCutoff;
@@ -348,7 +357,7 @@ export default function TimeClock({ employee, scheduledShift }) {
       }
 
       setMsg({
-        text: `✅ Shift Clocked Out! Logged as ${finalPaidHours} paid hours (${hasNoBreak ? 'No Break Worked' : 'Standard Break Deducted'}).`,
+        text: `✅ Shift Clocked Out! Logged as ${finalPaidHours} paid hours (${hasNoBreak ? 'No Break (+40m)' : 'Standard Break (-30m)'}).`,
         isError: false,
       });
 
@@ -411,7 +420,7 @@ export default function TimeClock({ employee, scheduledShift }) {
               marginBottom: '10px',
             }}
           >
-            ☕ No Break Worked 
+            ☕ No Break Worked (+40 min)
           </button>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
@@ -439,7 +448,7 @@ export default function TimeClock({ employee, scheduledShift }) {
                 color: containerType === '20ft' ? '#15803d' : '#334155',
               }}
             >
-              📦 20 ft
+              📦 20 ft (+10m)
             </button>
 
             <button
@@ -453,7 +462,7 @@ export default function TimeClock({ employee, scheduledShift }) {
                 color: containerType === '40ft' ? '#7e22ce' : '#334155',
               }}
             >
-              📦 40 ft 
+              📦 40 ft (+20m)
             </button>
           </div>
         </div>
