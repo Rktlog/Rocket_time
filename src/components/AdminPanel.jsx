@@ -1,3 +1,4 @@
+// src/components/AdminPanel.jsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -61,14 +62,37 @@ export default function AdminPanel({ onDataChange }) {
     return [street, suburb, state, postcode].filter(Boolean).join(', ');
   };
 
-  // Background Geocoding Service (Free OpenStreetMap / Nominatim)
+  // Multi-Strategy Background Geocoding (OpenStreetMap Nominatim)
   const geocodeAddress = async (street, suburb, state, postcode) => {
-    const fullQuery = `${street}, ${suburb}, ${state} ${postcode}, Australia`;
+    const headers = {
+      'Accept-Language': 'en',
+      'User-Agent': 'EmployeeTimeClockApp/1.0'
+    };
+
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullQuery)}`
+      // Strategy 1: Search exact full address
+      const fullQuery = `${street}, ${suburb}, ${state} ${postcode}, Australia`;
+      let res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullQuery)}`,
+        { headers }
       );
-      const data = await res.json();
+      let data = await res.json();
+
+      if (data && data.length > 0) {
+        return {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon)
+        };
+      }
+
+      // Strategy 2: Fall back to Suburb + State + Postcode
+      const fallbackQuery = `${suburb}, ${state} ${postcode}, Australia`;
+      res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fallbackQuery)}`,
+        { headers }
+      );
+      data = await res.json();
+
       if (data && data.length > 0) {
         return {
           lat: parseFloat(data[0].lat),
@@ -76,8 +100,9 @@ export default function AdminPanel({ onDataChange }) {
         };
       }
     } catch (err) {
-      console.warn('Background geocoding fetch error:', err);
+      console.warn('Background geocoding error:', err);
     }
+
     return { lat: null, lng: null };
   };
 
@@ -107,7 +132,13 @@ export default function AdminPanel({ onDataChange }) {
 
       if (error) throw error;
 
-      setMsg({ text: `✅ Site "${newSiteName}" added successfully with GPS saved!`, isError: false });
+      setMsg({ 
+        text: lat 
+          ? `✅ Site "${newSiteName}" added successfully with GPS saved!` 
+          : `⚠️ Site saved, but GPS coordinates could not be resolved automatically.`, 
+        isError: !lat 
+      });
+
       setNewSiteName('');
       setNewStreet('');
       setNewSuburb('');
