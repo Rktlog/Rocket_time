@@ -8,6 +8,15 @@ export default function TimeClock({ employee, scheduledShift }) {
   const [clockInTime, setClockInTime] = useState(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
+  // Dynamic Site State fetched strictly from DB
+  const [allocatedSite, setAllocatedSite] = useState({
+    name: employee?.location || 'Unassigned Site',
+    lat: null,
+    lng: null,
+    maxDistanceKm: 5.0,
+    loaded: false,
+  });
+
   // Shift Bonus & Break Options
   const [hasNoBreak, setHasNoBreak] = useState(false);
   const [containerType, setContainerType] = useState('none');
@@ -15,23 +24,57 @@ export default function TimeClock({ employee, scheduledShift }) {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState({ text: '', isError: false });
 
-  const targetSite = {
-    lat: employee?.site_lat || -37.6698,
-    lng: employee?.site_lng || 144.9540,
-    maxDistanceKm: 5.0,
+  // 1. Load Dynamic Site Data from DB and Recover Active Shift
+  useEffect(() => {
+    fetchAllocatedSiteFromDB();
+    checkActiveShift();
+  }, [employee]);
+
+  const fetchAllocatedSiteFromDB = async () => {
+    const siteName = employee?.location;
+    if (!siteName) {
+      setAllocatedSite(prev => ({ ...prev, loaded: true }));
+      return;
+    }
+
+    try {
+      // Query the sites table for exact matching location name
+      const { data: siteData, error } = await supabase
+        .from('sites')
+        .select('*')
+        .ilike('name', `%${siteName.trim()}%`)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (siteData && siteData.latitude && siteData.longitude) {
+        setAllocatedSite({
+          name: siteData.name,
+          lat: parseFloat(siteData.latitude),
+          lng: parseFloat(siteData.longitude),
+          maxDistanceKm: parseFloat(siteData.radius_km || 5.0),
+          loaded: true,
+        });
+      } else {
+        setAllocatedSite({
+          name: siteName,
+          lat: null,
+          lng: null,
+          maxDistanceKm: 5.0,
+          loaded: true,
+        });
+      }
+    } catch (err) {
+      console.warn('Error retrieving site coordinates from database:', err);
+      setAllocatedSite(prev => ({ ...prev, loaded: true }));
+    }
   };
 
-  // Helper to construct today's 8:00 PM (20:00:00) cutoff date object
   const getEightPmCutoff = (referenceDate = new Date()) => {
     const cutoff = new Date(referenceDate);
-    cutoff.setHours(20, 0, 0, 0); // 8:00:00 PM
+    cutoff.setHours(20, 0, 0, 0);
     return cutoff;
   };
-
-  // 1. Recover active running shift with auto-clock-out guardrail for forgotten shifts
-  useEffect(() => {
-    checkActiveShift();
-  }, []);
 
   const checkActiveShift = async () => {
     try {
@@ -99,7 +142,7 @@ export default function TimeClock({ employee, scheduledShift }) {
     }
   };
 
-  // 2. Real-time clock timer & 8:00 PM automatic trigger
+  // 2. Real-time Timer
   useEffect(() => {
     let timer = null;
     if (isClockedIn && clockInTime) {
@@ -189,7 +232,7 @@ export default function TimeClock({ employee, scheduledShift }) {
     return actualDate;
   };
 
-  // UPDATED PAID HOURS CALCULATION
+  // Paid Hours Calculation Rules
   const calculatePaidHours = (adjustedIn, adjustedOut, noBreakWorked, container) => {
     const totalMs = adjustedOut.getTime() - adjustedIn.getTime();
     const rawHours = totalMs / (1000 * 60 * 60);
@@ -197,27 +240,33 @@ export default function TimeClock({ employee, scheduledShift }) {
     let calculatedPaidHours = 0;
 
     if (!noBreakWorked) {
-      // Deduct 30 minutes (0.50 hours) for standard break
       calculatedPaidHours = Math.max(0, rawHours - 0.50);
     } else {
-      // Add 40 minutes (+0.6667 hours) bonus if no break was taken
       calculatedPaidHours = rawHours + (40 / 60);
     }
 
-    // Container Bonuses
-    if (container === '20ft') calculatedPaidHours += (10 / 60); // +10 minutes
-    if (container === '40ft') calculatedPaidHours += (20 / 60); // +20 minutes
+    if (container === '20ft') calculatedPaidHours += (10 / 60);
+    if (container === '40ft') calculatedPaidHours += (20 / 60);
 
     return calculatedPaidHours.toFixed(2);
   };
 
-  // 3. Start Clock In -> Strict Geolocation Validation
+  // 3. Strict Geolocation Clock-In with Dynamic Site Bounds
   const handleStartClockIn = () => {
     setLoading(true);
-    setMsg({ text: '📡 Verifying GPS location...', isError: false });
+    setMsg({ text: `📡 Verifying GPS location for site: ${allocatedSite.name}...`, isError: false });
+
+    if (!allocatedSite.lat || !allocatedSite.lng) {
+      setMsg({
+        text: `⚠️ Location coordinates for "${allocatedSite.name}" are not set in the database. Please contact your manager.`,
+        isError: true,
+      });
+      setLoading(false);
+      return;
+    }
 
     if (!navigator.geolocation) {
-      setMsg({ text: '❌ Geolocation is not supported by your browser or device.', isError: true });
+      setMsg({ text: '❌ Geolocation is not supported on this device.', isError: true });
       setLoading(false);
       return;
     }
@@ -227,21 +276,35 @@ export default function TimeClock({ employee, scheduledShift }) {
         const userLat = position.coords.latitude;
         const userLng = position.coords.longitude;
         const accuracy = position.coords.accuracy;
+        const positionTimestamp = position.timestamp;
+        const nowTimestamp = Date.now();
 
-        if (accuracy > 1500) {
+        // 1. Block stale cached location (> 15 seconds old)
+        if (nowTimestamp - positionTimestamp > 15000) {
           setMsg({
-            text: `❌ Low accuracy location detected (${Math.round(accuracy)}m). Please clock in using a GPS-enabled mobile device.`,
+            text: '❌ Stale GPS position detected. Please refresh the page with active location permissions.',
             isError: true,
           });
           setLoading(false);
           return;
         }
 
-        const distance = calculateDistanceKm(userLat, userLng, targetSite.lat, targetSite.lng);
-
-        if (distance > targetSite.maxDistanceKm) {
+        // 2. Strict accuracy check (< 200m required)
+        if (accuracy > 200) {
           setMsg({
-            text: `❌ Location Rejected! You are ${distance.toFixed(1)} km away. Must be within 5 km of assigned site.`,
+            text: `❌ GPS accuracy too low (${Math.round(accuracy)}m). Please clock in using a mobile phone with High-Precision GPS enabled.`,
+            isError: true,
+          });
+          setLoading(false);
+          return;
+        }
+
+        // 3. Calculate distance against dynamic database site coordinates
+        const distance = calculateDistanceKm(userLat, userLng, allocatedSite.lat, allocatedSite.lng);
+
+        if (distance > allocatedSite.maxDistanceKm) {
+          setMsg({
+            text: `❌ Location Rejected! You are ${distance.toFixed(2)} km away from site "${allocatedSite.name}". Must be within ${allocatedSite.maxDistanceKm} km bounds.`,
             isError: true,
           });
           setLoading(false);
@@ -259,7 +322,7 @@ export default function TimeClock({ employee, scheduledShift }) {
                 user_id: user?.id,
                 employee_name: employee?.name || user?.email?.split('@')[0] || 'Employee',
                 department: employee?.department || 'Englite',
-                location: employee?.location || 'Englite campbellfield',
+                location: allocatedSite.name,
                 clock_in: now.toISOString(),
                 no_break: hasNoBreak,
                 container_type: containerType,
@@ -275,7 +338,7 @@ export default function TimeClock({ employee, scheduledShift }) {
           setClockInTime(now);
           setIsClockedIn(true);
           setElapsedSeconds(0);
-          setMsg({ text: `🟢 Shift started! Recorded in database.`, isError: false });
+          setMsg({ text: `🟢 Shift started at ${allocatedSite.name}!`, isError: false });
         } catch (err) {
           setMsg({ text: `❌ Database Error: ${err.message}`, isError: true });
         } finally {
@@ -283,23 +346,17 @@ export default function TimeClock({ employee, scheduledShift }) {
         }
       },
       (error) => {
-        let errorReason = 'Location access denied or unavailable.';
-        if (error.code === error.PERMISSION_DENIED) {
-          errorReason = 'Location permission was denied. Please allow location access in your browser settings.';
-        } else if (error.code === error.POSITION_UNAVAILABLE) {
-          errorReason = 'Location position unavailable. Please ensure GPS is enabled on your device.';
-        } else if (error.code === error.TIMEOUT) {
-          errorReason = 'Location request timed out. Please try again.';
-        }
-
-        setMsg({ text: `❌ ${errorReason}`, isError: true });
+        setMsg({ text: '❌ Location access denied or lost. Please enable device GPS permissions.', isError: true });
         setLoading(false);
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { 
+        enableHighAccuracy: true,
+        timeout: 8000,
+        maximumAge: 0
+      }
     );
   };
 
-  // 4. Clock Out -> Update existing running record in Supabase
   const handleClockOut = async () => {
     setLoading(true);
     let actualClockOutDate = new Date();
@@ -345,7 +402,7 @@ export default function TimeClock({ employee, scheduledShift }) {
             user_id: user?.id,
             employee_name: employee?.name || 'Employee',
             department: employee?.department || 'Englite',
-            location: employee?.location || 'Englite campbellfield',
+            location: allocatedSite.name,
             clock_in: adjustedClockIn.toISOString(),
             clock_out: adjustedClockOut.toISOString(),
             no_break: hasNoBreak,
@@ -387,15 +444,15 @@ export default function TimeClock({ employee, scheduledShift }) {
             <div style={infoValueStyle}>{employee?.name || 'Employee'}</div>
           </div>
           <div>
-            <span style={infoLabelStyle}>Department & Site</span>
-            <div style={infoValueStyle}>🏢 {employee?.department || 'Englite'} ({employee?.location || 'Englite campbellfield'})</div>
+            <span style={infoLabelStyle}>Allocated Site</span>
+            <div style={infoValueStyle}>📍 {allocatedSite.name}</div>
           </div>
         </div>
 
         <div style={{ textAlign: 'center', margin: '20px 0' }}>
           {!isClockedIn ? (
             <button onClick={handleStartClockIn} disabled={loading} style={clockInBtnStyle}>
-              {loading ? 'Verifying Location...' : '▶ Clock In Shift'}
+              {loading ? 'Verifying GPS...' : '▶ Clock In Shift'}
             </button>
           ) : (
             <div style={timerBoxStyle}>
@@ -420,7 +477,7 @@ export default function TimeClock({ employee, scheduledShift }) {
               marginBottom: '10px',
             }}
           >
-            ☕ No Break Worked (+40 min)
+            ☕ No Break 
           </button>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
@@ -448,7 +505,7 @@ export default function TimeClock({ employee, scheduledShift }) {
                 color: containerType === '20ft' ? '#15803d' : '#334155',
               }}
             >
-              📦 20 ft (+10m)
+              📦 20 ft 
             </button>
 
             <button
@@ -462,7 +519,7 @@ export default function TimeClock({ employee, scheduledShift }) {
                 color: containerType === '40ft' ? '#7e22ce' : '#334155',
               }}
             >
-              📦 40 ft (+20m)
+              📦 40 ft 
             </button>
           </div>
         </div>
