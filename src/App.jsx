@@ -73,6 +73,7 @@ class ErrorBoundary extends React.Component {
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
+  const [loadingSession, setLoadingSession] = useState(true);
 
   // Shared State
   const [inviteFullName, setInviteFullName] = useState('');
@@ -86,7 +87,63 @@ export default function App() {
 
   useEffect(() => {
     fetchDepartmentsAndSites();
+    checkExistingSession();
+
+    // Listen for real-time auth state changes (persist login on refresh)
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        await restoreUserProfile(session.user);
+      } else {
+        setCurrentUser(null);
+      }
+      setLoadingSession(false);
+    });
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
   }, []);
+
+  const checkExistingSession = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await restoreUserProfile(session.user);
+      }
+    } catch (err) {
+      console.error('Session restore error:', err);
+    } finally {
+      setLoadingSession(false);
+    }
+  };
+
+  const restoreUserProfile = async (authUser) => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, role, department, location')
+        .eq('id', authUser.id)
+        .single();
+
+      const rawRole = profile?.role || authUser.user_metadata?.role || 'user';
+      const userRole = String(rawRole).toLowerCase().trim();
+
+      const userName = profile?.full_name || authUser.user_metadata?.full_name || authUser.email.split('@')[0];
+      const userDept = profile?.department || authUser.user_metadata?.department_name || 'englite';
+      const userLoc = profile?.location || 'Englite campbellfield';
+
+      setCurrentUser({
+        id: authUser.id,
+        name: userName,
+        email: authUser.email,
+        role: userRole,
+        department: userDept,
+        location: userLoc,
+      });
+    } catch (err) {
+      console.error('Error fetching profile on restore:', err);
+    }
+  };
 
   const fetchDepartmentsAndSites = async () => {
     try {
@@ -134,9 +191,24 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setCurrentUser(null);
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch (err) {
+      console.warn('Signout warning:', err);
+    } finally {
+      localStorage.clear();
+      sessionStorage.clear();
+      setCurrentUser(null);
+    }
   };
+
+  if (loadingSession) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#f1f5f9', color: '#64748b', fontSize: '14px', fontWeight: 'bold' }}>
+        🚀 Loading Rocket Time workspace...
+      </div>
+    );
+  }
 
   return (
     <div style={layoutStyle}>
@@ -500,23 +572,24 @@ function UserDashboard({ currentUser }) {
 }
 
 /* =========================================
-   INSTANT STAFF AVAILABILITY VIEW (FULLY SYNCED)
+   INSTANT STAFF AVAILABILITY VIEW (THURSDAY CYCLE)
    ========================================= */
 function ManagerInstantAvailabilityView({ department, location }) {
   const [currentWeekStart, setCurrentWeekStart] = useState(getStartOfWeek(new Date()));
-  const [selectedDay, setSelectedDay] = useState('Monday');
+  const [selectedDay, setSelectedDay] = useState('Thursday');
   const [staffRoster, setStaffRoster] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sendingId, setSendingId] = useState(null);
   const [msg, setMsg] = useState('');
 
+  // Calculate start of week starting on THURSDAY
   function getStartOfWeek(d) {
     const date = new Date(d);
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(date.setDate(diff));
-    monday.setHours(0, 0, 0, 0);
-    return monday;
+    const day = date.getDay(); // Sunday = 0, Monday = 1, ..., Thursday = 4
+    const diff = date.getDate() - day + (day < 4 ? -3 : 4);
+    const thursday = new Date(date.setDate(diff));
+    thursday.setHours(0, 0, 0, 0);
+    return thursday;
   }
 
   const changeWeek = (offset) => {
@@ -534,19 +607,16 @@ function ManagerInstantAvailabilityView({ department, location }) {
     const weekStartStr = currentWeekStart.toISOString().split('T')[0];
 
     try {
-      // 1. Fetch profiles cleanly without strict role/dept blockers
       const { data: profiles, error: pErr } = await supabase
         .from('profiles')
         .select('id, full_name, name, email, department, role');
 
       if (pErr) throw pErr;
 
-      // Filter out admins
       let activeStaff = (profiles || []).filter(
         (p) => String(p.role || '').toLowerCase() !== 'admin'
       );
 
-      // Department matching with fallback for unassigned staff
       if (department && department !== 'All Departments' && department !== 'All Staff') {
         const targetDept = department.trim().toLowerCase();
         activeStaff = activeStaff.filter((p) => {
@@ -555,7 +625,6 @@ function ManagerInstantAvailabilityView({ department, location }) {
         });
       }
 
-      // 2. Fetch staff availability records for the selected day
       const { data: availData, error: aErr } = await supabase
         .from('weekly_availability')
         .select('*')
@@ -563,7 +632,6 @@ function ManagerInstantAvailabilityView({ department, location }) {
 
       if (aErr) console.warn('Availability query warning:', aErr.message);
 
-      // Create lookup map by user_id
       const availMap = {};
       (availData || []).forEach((a) => {
         if (!a.week_start || a.week_start === weekStartStr) {
@@ -575,7 +643,6 @@ function ManagerInstantAvailabilityView({ department, location }) {
         }
       });
 
-      // 3. Map availability directly onto employee profiles
       const processed = activeStaff.map((staff) => {
         const pref = availMap[staff.id];
         const isAvail = pref ? pref.isAvailable : true;
@@ -599,7 +666,8 @@ function ManagerInstantAvailabilityView({ department, location }) {
 
   const handleSendInstantOffer = async (staffMember) => {
     setSendingId(staffMember.id);
-    const dayIndex = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].indexOf(selectedDay);
+    const daysArr = ['Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday'];
+    const dayIndex = daysArr.indexOf(selectedDay);
     const shiftDateObj = new Date(currentWeekStart);
     shiftDateObj.setDate(shiftDateObj.getDate() + dayIndex);
     const shiftDateStr = shiftDateObj.toISOString().split('T')[0];
@@ -647,7 +715,7 @@ function ManagerInstantAvailabilityView({ department, location }) {
       </div>
 
       <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '4px' }}>
-        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, idx) => {
+        {['Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday'].map((day, idx) => {
           const dateObj = new Date(currentWeekStart);
           dateObj.setDate(dateObj.getDate() + idx);
           return (
@@ -739,7 +807,7 @@ function ManagerInstantAvailabilityView({ department, location }) {
   );
 }
 
-// Pending Shift Offers Component with Day Name Display
+// Pending Shift Offers Component
 function PendingOffersView({ user }) {
   const [shiftOffers, setShiftOffers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1330,7 +1398,7 @@ function AdminEmployeeProfileModal({ userData, onClose, onSave }) {
    ========================================= */
 function AdminReportSchedulerView() {
   const [recipientEmail, setRecipientEmail] = useState('');
-  const [dispatchDay, setDispatchDay] = useState('Monday');
+  const [dispatchDay, setDispatchDay] = useState('Thursday');
   const [dispatchTime, setDispatchTime] = useState('08:00');
   const [frequency, setFrequency] = useState('Weekly');
   const [schedules, setSchedules] = useState([]);
@@ -1419,7 +1487,7 @@ function AdminReportSchedulerView() {
                   onChange={(e) => setDispatchDay(e.target.value)}
                   style={{ ...inputStyle, width: '100%', marginBottom: 0 }}
                 >
-                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
+                  {['Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday'].map(day => (
                     <option key={day} value={day}>{day}</option>
                   ))}
                 </select>
@@ -1472,7 +1540,7 @@ function AdminReportSchedulerView() {
 }
 
 /* =========================================
-   EXPANDABLE WEEKLY TIMESHEETS WITH RELAXED RETRIEVAL
+   EXPANDABLE WEEKLY TIMESHEETS (THURSDAY CYCLE)
    ========================================= */
 function DepartmentTimeLogsView({ department }) {
   const [currentWeekStart, setCurrentWeekStart] = useState(getStartOfWeek(new Date()));
@@ -1485,13 +1553,14 @@ function DepartmentTimeLogsView({ department }) {
   const [processing, setProcessing] = useState(false);
   const [msg, setMsg] = useState({ text: '', isError: false });
 
+  // Calculate start of week starting on THURSDAY
   function getStartOfWeek(d) {
     const date = new Date(d);
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(date.setDate(diff));
-    monday.setHours(0, 0, 0, 0);
-    return monday;
+    const day = date.getDay(); // Sunday = 0, Monday = 1, ..., Thursday = 4
+    const diff = date.getDate() - day + (day < 4 ? -3 : 4);
+    const thursday = new Date(date.setDate(diff));
+    thursday.setHours(0, 0, 0, 0);
+    return thursday;
   }
 
   const changeWeek = (offset) => {

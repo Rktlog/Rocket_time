@@ -7,13 +7,14 @@ export default function MyTimesheet({ user }) {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Calculate start of week starting on THURSDAY
   function getStartOfWeek(d) {
     const date = new Date(d);
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(date.setDate(diff));
-    monday.setHours(0, 0, 0, 0);
-    return monday;
+    const day = date.getDay(); // Sunday = 0, Monday = 1, ..., Thursday = 4
+    const diff = date.getDate() - day + (day < 4 ? -3 : 4);
+    const thursday = new Date(date.setDate(diff));
+    thursday.setHours(0, 0, 0, 0);
+    return thursday;
   }
 
   const changeWeek = (offset) => {
