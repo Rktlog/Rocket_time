@@ -61,25 +61,53 @@ export default function AdminPanel({ onDataChange }) {
     return [street, suburb, state, postcode].filter(Boolean).join(', ');
   };
 
-  // Add New Site
+  // Background Geocoding Service (Free OpenStreetMap / Nominatim)
+  const geocodeAddress = async (street, suburb, state, postcode) => {
+    const fullQuery = `${street}, ${suburb}, ${state} ${postcode}, Australia`;
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullQuery)}`
+      );
+      const data = await res.json();
+      if (data && data.length > 0) {
+        return {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon)
+        };
+      }
+    } catch (err) {
+      console.warn('Background geocoding fetch error:', err);
+    }
+    return { lat: null, lng: null };
+  };
+
+  // Add New Site (With Silent Background Geocoding)
   const handleAddSite = async (e) => {
     e.preventDefault();
     if (!newSiteName.trim()) return;
 
+    setMsg({ text: '📡 Geocoding location and saving site...', isError: false });
+
     const fullAddress = formatAddress(newStreet, newSuburb, newState, newPostcode);
+    const { lat, lng } = await geocodeAddress(newStreet, newSuburb, newState, newPostcode);
 
     try {
       const { error } = await supabase.from('sites').insert([
         { 
           name: newSiteName.trim(), 
           address: fullAddress,
-          department: newAssignedDept
+          department: newAssignedDept,
+          lat: lat,
+          lng: lng,
+          latitude: lat,
+          longitude: lng,
+          radius_km: 5.0
         }
       ]);
 
       if (error) throw error;
 
-      setMsg({ text: `✅ Site "${newSiteName}" added successfully!`, isError: false });
+      setMsg({ text: `✅ Site "${newSiteName}" added successfully with GPS saved!`, isError: false });
       setNewSiteName('');
       setNewStreet('');
       setNewSuburb('');
@@ -88,7 +116,8 @@ export default function AdminPanel({ onDataChange }) {
       fetchSitesAndDepts();
     } catch (err) {
       setMsg({ text: `❌ Error adding site: ${err.message}`, isError: true });
-    } setTimeout(() => setMsg({ text: '', isError: false }), 4000);
+    }
+    setTimeout(() => setMsg({ text: '', isError: false }), 4000);
   };
 
   // Start Editing Site Mode
@@ -96,7 +125,6 @@ export default function AdminPanel({ onDataChange }) {
     setEditingSiteId(site.id);
     setEditSiteName(site.name);
 
-    // Split formatted address back into parts if possible
     const addressParts = (site.address || '').split(', ').map(p => p.trim());
     setEditStreet(addressParts[0] || '');
     setEditSuburb(addressParts[1] || '');
@@ -105,10 +133,13 @@ export default function AdminPanel({ onDataChange }) {
     setEditAssignedDept(site.department || (departments[0]?.name || ''));
   };
 
-  // Save Site Edit
+  // Save Site Edit (With Silent Background Geocoding)
   const handleUpdateSite = async (e) => {
     e.preventDefault();
+    setMsg({ text: '📡 Updating GPS coordinates and site details...', isError: false });
+
     const fullAddress = formatAddress(editStreet, editSuburb, editState, editPostcode);
+    const { lat, lng } = await geocodeAddress(editStreet, editSuburb, editState, editPostcode);
 
     try {
       const { error } = await supabase
@@ -116,18 +147,24 @@ export default function AdminPanel({ onDataChange }) {
         .update({ 
           name: editSiteName.trim(), 
           address: fullAddress,
-          department: editAssignedDept 
+          department: editAssignedDept,
+          lat: lat,
+          lng: lng,
+          latitude: lat,
+          longitude: lng,
+          radius_km: 5.0
         })
         .eq('id', editingSiteId);
 
       if (error) throw error;
 
-      setMsg({ text: '✅ Site details updated successfully!', isError: false });
+      setMsg({ text: '✅ Site details and GPS updated successfully!', isError: false });
       setEditingSiteId(null);
       fetchSitesAndDepts();
     } catch (err) {
       setMsg({ text: `❌ Update failed: ${err.message}`, isError: true });
-    } setTimeout(() => setMsg({ text: '', isError: false }), 4000);
+    }
+    setTimeout(() => setMsg({ text: '', isError: false }), 4000);
   };
 
   // Delete Site
@@ -142,7 +179,8 @@ export default function AdminPanel({ onDataChange }) {
       fetchSitesAndDepts();
     } catch (err) {
       setMsg({ text: `❌ Delete failed: ${err.message}`, isError: true });
-    } setTimeout(() => setMsg({ text: '', isError: false }), 4000);
+    }
+    setTimeout(() => setMsg({ text: '', isError: false }), 4000);
   };
 
   // Add Department
@@ -159,7 +197,8 @@ export default function AdminPanel({ onDataChange }) {
       fetchSitesAndDepts();
     } catch (err) {
       setMsg({ text: `❌ Failed to add department: ${err.message}`, isError: true });
-    } setTimeout(() => setMsg({ text: '', isError: false }), 4000);
+    }
+    setTimeout(() => setMsg({ text: '', isError: false }), 4000);
   };
 
   return (
@@ -195,11 +234,10 @@ export default function AdminPanel({ onDataChange }) {
                 style={{ ...inputStyle, marginBottom: '12px' }}
               />
 
-              {/* 4-BOX ADDRESS UI */}
               <label style={labelStyle}>Street Name</label>
               <input
                 type="text"
-                placeholder="e.g. 123 Main Street"
+                placeholder="e.g. 23 Scammel St"
                 value={newStreet}
                 onChange={(e) => setNewStreet(e.target.value)}
                 required
@@ -248,7 +286,6 @@ export default function AdminPanel({ onDataChange }) {
                 </div>
               </div>
 
-              {/* ASSIGNED DEPARTMENT DROPDOWN */}
               <label style={labelStyle}>Assigned Department</label>
               <select
                 value={newAssignedDept}
@@ -280,7 +317,6 @@ export default function AdminPanel({ onDataChange }) {
                 {sites.map((site) => (
                   <div key={site.id} style={listItemStyle}>
                     {editingSiteId === site.id ? (
-                      /* INLINE EDIT FORM */
                       <form onSubmit={handleUpdateSite} style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
                         <label style={labelStyle}>Edit Site Name</label>
                         <input
@@ -357,7 +393,6 @@ export default function AdminPanel({ onDataChange }) {
                         </div>
                       </form>
                     ) : (
-                      /* VIEW MODE */
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                         <div>
                           <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#0f172a' }}>
