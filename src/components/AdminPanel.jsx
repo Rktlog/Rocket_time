@@ -61,36 +61,49 @@ export default function AdminPanel({ onDataChange }) {
     return [street, suburb, state, postcode].filter(Boolean).join(', ');
   };
 
-  // Multi-Strategy Background Geocoding
+  // Robust 4-Tier Fallback Geocoder for Australian Addresses
   const geocodeAddress = async (street, suburb, state, postcode) => {
     const headers = { 'Accept-Language': 'en' };
     
-    try {
-      // Strategy 1: Full specific street address
-      const query1 = `${street}, ${suburb}, ${state} ${postcode}, Australia`;
-      let res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query1)}`, { headers });
-      let data = await res.json();
+    // Clean up street name (removes leading house numbers e.g. "23 Scammel St" -> "Scammel St")
+    const cleanStreet = street.replace(/^[0-9\/\-]+\s*/, '').trim();
 
-      if (data && data.length > 0) {
-        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    const searchQueries = [
+      // Tier 1: Full exact address
+      `${street}, ${suburb}, ${state} ${postcode}, Australia`,
+      // Tier 2: Street + Suburb + State (without street number)
+      `${cleanStreet}, ${suburb}, ${state}, Australia`,
+      // Tier 3: Suburb + Postcode + State
+      `${suburb}, ${state} ${postcode}, Australia`,
+      // Tier 4: Suburb + State only
+      `${suburb}, ${state}, Australia`
+    ];
+
+    for (const query of searchQueries) {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=au`,
+          { headers }
+        );
+        const data = await res.json();
+
+        if (data && data.length > 0) {
+          console.log(`✅ GPS Resolved via query: "${query}"`, data[0].lat, data[0].lon);
+          return {
+            lat: parseFloat(data[0].lat),
+            lng: parseFloat(data[0].lon)
+          };
+        }
+      } catch (err) {
+        console.warn(`Geocoding failed for "${query}":`, err);
       }
-
-      // Strategy 2: Suburb + State + Postcode fallback
-      const query2 = `${suburb}, ${state} ${postcode}, Australia`;
-      res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query2)}`, { headers });
-      data = await res.json();
-
-      if (data && data.length > 0) {
-        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-      }
-    } catch (err) {
-      console.warn('Geocoding error:', err);
     }
 
+    console.error('❌ Could not resolve GPS coordinates for address.');
     return { lat: null, lng: null };
   };
 
-  // Add New Site
+  // Add New Site (With Silent Background Geocoding)
   const handleAddSite = async (e) => {
     e.preventDefault();
     if (!newSiteName.trim()) return;
@@ -148,7 +161,7 @@ export default function AdminPanel({ onDataChange }) {
     setEditAssignedDept(site.department || (departments[0]?.name || ''));
   };
 
-  // Save Site Edit
+  // Save Site Edit (With Silent Background Geocoding)
   const handleUpdateSite = async (e) => {
     e.preventDefault();
     setMsg({ text: '📡 Updating GPS coordinates and site details...', isError: false });

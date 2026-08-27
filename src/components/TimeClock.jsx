@@ -11,13 +11,14 @@ export default function TimeClock({ employee, scheduledShift }) {
   // Dynamic Allocated Site State
   const [allocatedSite, setAllocatedSite] = useState({
     name: employee?.location || 'Unassigned Site',
+    department: employee?.department || 'General',
     lat: null,
     lng: null,
     maxDistanceKm: 5.0,
     loaded: false,
   });
 
-  // Shift Bonus & Break Options
+  // Shift Options
   const [hasNoBreak, setHasNoBreak] = useState(false);
   const [containerType, setContainerType] = useState('none');
 
@@ -28,12 +29,16 @@ export default function TimeClock({ employee, scheduledShift }) {
   useEffect(() => {
     resolveSiteGpsInBackground();
     checkActiveShift();
-  }, [employee?.location]);
+  }, [employee?.location, employee?.department]);
 
   const resolveSiteGpsInBackground = async () => {
     const siteName = employee?.location;
     if (!siteName) {
-      setAllocatedSite(prev => ({ ...prev, loaded: true }));
+      setAllocatedSite(prev => ({ 
+        ...prev, 
+        department: employee?.department || 'General',
+        loaded: true 
+      }));
       return;
     }
 
@@ -49,6 +54,7 @@ export default function TimeClock({ employee, scheduledShift }) {
       let resolvedLat = siteData?.lat ?? siteData?.latitude ?? siteData?.site_lat;
       let resolvedLng = siteData?.lng ?? siteData?.longitude ?? siteData?.site_lng;
       let radiusKm = parseFloat(siteData?.radius_km || siteData?.max_distance_km || 5.0);
+      let siteDept = siteData?.department || employee?.department || 'General';
 
       if (!resolvedLat || !resolvedLng) {
         const { data: profileData } = await supabase
@@ -66,6 +72,7 @@ export default function TimeClock({ employee, scheduledShift }) {
       if (resolvedLat && resolvedLng) {
         setAllocatedSite({
           name: siteData?.name || siteName,
+          department: siteDept,
           lat: parseFloat(resolvedLat),
           lng: parseFloat(resolvedLng),
           maxDistanceKm: radiusKm,
@@ -74,6 +81,7 @@ export default function TimeClock({ employee, scheduledShift }) {
       } else {
         setAllocatedSite({
           name: siteName,
+          department: siteDept,
           lat: null,
           lng: null,
           maxDistanceKm: radiusKm,
@@ -133,7 +141,7 @@ export default function TimeClock({ employee, scheduledShift }) {
             .eq('id', data.id);
 
           setMsg({
-            text: `⚠️ Previous shift forgot to clock out! Automatically closed at 8:00 PM (${paidHours} hrs logged).`,
+            text: `⚠️ Previous shift forgot to clock out! Automatically closed at 8:00 PM.`,
             isError: false,
           });
 
@@ -201,7 +209,7 @@ export default function TimeClock({ employee, scheduledShift }) {
       }
 
       setMsg({
-        text: `🌙 8:00 PM shift cutoff reached! Automatically clocked out (${paidHours} paid hrs logged).`,
+        text: `🌙 8:00 PM shift cutoff reached! Automatically clocked out.`,
         isError: false,
       });
 
@@ -248,7 +256,6 @@ export default function TimeClock({ employee, scheduledShift }) {
     return actualDate;
   };
 
-  // Calculation Logic
   const calculatePaidHours = (adjustedIn, adjustedOut, noBreakWorked, container) => {
     const totalMs = adjustedOut.getTime() - adjustedIn.getTime();
     const rawHours = totalMs / (1000 * 60 * 60);
@@ -256,13 +263,13 @@ export default function TimeClock({ employee, scheduledShift }) {
     let calculatedPaidHours = 0;
 
     if (!noBreakWorked) {
-      calculatedPaidHours = Math.max(0, rawHours - 0.50); // -30 min break
+      calculatedPaidHours = Math.max(0, rawHours - 0.50);
     } else {
-      calculatedPaidHours = rawHours + (40 / 60); // +40 min no-break bonus
+      calculatedPaidHours = rawHours + (40 / 60);
     }
 
-    if (container === '20ft') calculatedPaidHours += (10 / 60); // +10 min
-    if (container === '40ft') calculatedPaidHours += (20 / 60); // +20 min
+    if (container === '20ft') calculatedPaidHours += (10 / 60);
+    if (container === '40ft') calculatedPaidHours += (20 / 60);
 
     return calculatedPaidHours.toFixed(2);
   };
@@ -295,7 +302,6 @@ export default function TimeClock({ employee, scheduledShift }) {
         const positionTimestamp = position.timestamp;
         const nowTimestamp = Date.now();
 
-        // Block stale cached coordinates (> 15 seconds)
         if (nowTimestamp - positionTimestamp > 15000) {
           setMsg({
             text: '❌ Stale GPS position detected. Please refresh the page with active location permissions.',
@@ -305,7 +311,6 @@ export default function TimeClock({ employee, scheduledShift }) {
           return;
         }
 
-        // Require high-accuracy signal (< 200m)
         if (accuracy > 200) {
           setMsg({
             text: `❌ GPS accuracy too low (${Math.round(accuracy)}m). Please clock in using a mobile phone with High-Precision GPS enabled.`,
@@ -315,7 +320,6 @@ export default function TimeClock({ employee, scheduledShift }) {
           return;
         }
 
-        // Distance check against dynamically resolved GPS coordinates
         const distance = calculateDistanceKm(userLat, userLng, allocatedSite.lat, allocatedSite.lng);
 
         if (distance > allocatedSite.maxDistanceKm) {
@@ -337,7 +341,7 @@ export default function TimeClock({ employee, scheduledShift }) {
               {
                 user_id: user?.id,
                 employee_name: employee?.name || user?.email?.split('@')[0] || 'Employee',
-                department: employee?.department || 'Englite',
+                department: allocatedSite.department,
                 location: allocatedSite.name,
                 clock_in: now.toISOString(),
                 no_break: hasNoBreak,
@@ -417,7 +421,7 @@ export default function TimeClock({ employee, scheduledShift }) {
           {
             user_id: user?.id,
             employee_name: employee?.name || 'Employee',
-            department: employee?.department || 'Englite',
+            department: allocatedSite.department,
             location: allocatedSite.name,
             clock_in: adjustedClockIn.toISOString(),
             clock_out: adjustedClockOut.toISOString(),
@@ -430,7 +434,7 @@ export default function TimeClock({ employee, scheduledShift }) {
       }
 
       setMsg({
-        text: `✅ Shift Clocked Out! Logged as ${finalPaidHours} paid hours (${hasNoBreak ? 'No Break (+40m)' : 'Standard Break (-30m)'}).`,
+        text: `✅ Shift Clocked Out! Logged as ${finalPaidHours} paid hours.`,
         isError: false,
       });
 
@@ -454,12 +458,17 @@ export default function TimeClock({ employee, scheduledShift }) {
           ⏱️ Shift Time Clock
         </h2>
 
+        {/* DISPLAY EMPLOYEE, ALLOCATED SITE & DEPARTMENT */}
         <div style={infoBoxStyle}>
           <div>
             <span style={infoLabelStyle}>Employee</span>
             <div style={infoValueStyle}>{employee?.name || 'Employee'}</div>
           </div>
           <div>
+            <span style={infoLabelStyle}>Department</span>
+            <div style={infoValueStyle}>🏢 {allocatedSite.department}</div>
+          </div>
+          <div style={{ gridColumn: 'span 2' }}>
             <span style={infoLabelStyle}>Allocated Site</span>
             <div style={infoValueStyle}>📍 {allocatedSite.name}</div>
           </div>
@@ -480,6 +489,7 @@ export default function TimeClock({ employee, scheduledShift }) {
           )}
         </div>
 
+        {/* BUTTON LABELS WITHOUT ADDED MINUTES */}
         <div style={{ opacity: isClockedIn ? 1 : 0.4, pointerEvents: isClockedIn ? 'auto' : 'none', marginBottom: '20px' }}>
           <button
             type="button"
@@ -493,7 +503,7 @@ export default function TimeClock({ employee, scheduledShift }) {
               marginBottom: '10px',
             }}
           >
-            ☕ No Break Worked (+40 min)
+            ☕ No Break Worked
           </button>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
@@ -521,7 +531,7 @@ export default function TimeClock({ employee, scheduledShift }) {
                 color: containerType === '20ft' ? '#15803d' : '#334155',
               }}
             >
-              📦 20 ft (+10m)
+              📦 20 ft
             </button>
 
             <button
@@ -535,7 +545,7 @@ export default function TimeClock({ employee, scheduledShift }) {
                 color: containerType === '40ft' ? '#7e22ce' : '#334155',
               }}
             >
-              📦 40 ft (+20m)
+              📦 40 ft
             </button>
           </div>
         </div>
