@@ -8,7 +8,7 @@ export default function TimeClock({ employee, scheduledShift }) {
   const [clockInTime, setClockInTime] = useState(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  // Dynamic Site State fetched strictly from DB
+  // Dynamic Allocated Site State
   const [allocatedSite, setAllocatedSite] = useState({
     name: employee?.location || 'Unassigned Site',
     lat: null,
@@ -24,13 +24,13 @@ export default function TimeClock({ employee, scheduledShift }) {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState({ text: '', isError: false });
 
-  // 1. Load Dynamic Site Data from DB and Recover Active Shift
+  // 1. Background GPS Resolution from Database & Recovery
   useEffect(() => {
-    fetchAllocatedSiteFromDB();
+    resolveSiteGpsInBackground();
     checkActiveShift();
-  }, [employee]);
+  }, [employee?.location]);
 
-  const fetchAllocatedSiteFromDB = async () => {
+  const resolveSiteGpsInBackground = async () => {
     const siteName = employee?.location;
     if (!siteName) {
       setAllocatedSite(prev => ({ ...prev, loaded: true }));
@@ -38,21 +38,37 @@ export default function TimeClock({ employee, scheduledShift }) {
     }
 
     try {
-      // Query the sites table for exact matching location name
       const { data: siteData, error } = await supabase
         .from('sites')
         .select('*')
         .ilike('name', `%${siteName.trim()}%`)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) console.warn('Site lookup query warning:', error.message);
 
-      if (siteData && siteData.latitude && siteData.longitude) {
+      let resolvedLat = siteData?.lat ?? siteData?.latitude ?? siteData?.site_lat;
+      let resolvedLng = siteData?.lng ?? siteData?.longitude ?? siteData?.site_lng;
+      let radiusKm = parseFloat(siteData?.radius_km || siteData?.max_distance_km || 5.0);
+
+      if (!resolvedLat || !resolvedLng) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('site_lat, site_lng')
+          .eq('id', employee?.id || '')
+          .maybeSingle();
+
+        if (profileData?.site_lat && profileData?.site_lng) {
+          resolvedLat = profileData.site_lat;
+          resolvedLng = profileData.site_lng;
+        }
+      }
+
+      if (resolvedLat && resolvedLng) {
         setAllocatedSite({
-          name: siteData.name,
-          lat: parseFloat(siteData.latitude),
-          lng: parseFloat(siteData.longitude),
-          maxDistanceKm: parseFloat(siteData.radius_km || 5.0),
+          name: siteData?.name || siteName,
+          lat: parseFloat(resolvedLat),
+          lng: parseFloat(resolvedLng),
+          maxDistanceKm: radiusKm,
           loaded: true,
         });
       } else {
@@ -60,19 +76,19 @@ export default function TimeClock({ employee, scheduledShift }) {
           name: siteName,
           lat: null,
           lng: null,
-          maxDistanceKm: 5.0,
+          maxDistanceKm: radiusKm,
           loaded: true,
         });
       }
     } catch (err) {
-      console.warn('Error retrieving site coordinates from database:', err);
+      console.error('Error resolving site GPS in background:', err);
       setAllocatedSite(prev => ({ ...prev, loaded: true }));
     }
   };
 
   const getEightPmCutoff = (referenceDate = new Date()) => {
     const cutoff = new Date(referenceDate);
-    cutoff.setHours(20, 0, 0, 0);
+    cutoff.setHours(20, 0, 0, 0); // 8:00:00 PM cutoff
     return cutoff;
   };
 
@@ -142,7 +158,7 @@ export default function TimeClock({ employee, scheduledShift }) {
     }
   };
 
-  // 2. Real-time Timer
+  // 2. Timer Loop
   useEffect(() => {
     let timer = null;
     if (isClockedIn && clockInTime) {
@@ -232,7 +248,7 @@ export default function TimeClock({ employee, scheduledShift }) {
     return actualDate;
   };
 
-  // Paid Hours Calculation Rules
+  // Calculation Logic
   const calculatePaidHours = (adjustedIn, adjustedOut, noBreakWorked, container) => {
     const totalMs = adjustedOut.getTime() - adjustedIn.getTime();
     const rawHours = totalMs / (1000 * 60 * 60);
@@ -240,25 +256,25 @@ export default function TimeClock({ employee, scheduledShift }) {
     let calculatedPaidHours = 0;
 
     if (!noBreakWorked) {
-      calculatedPaidHours = Math.max(0, rawHours - 0.50);
+      calculatedPaidHours = Math.max(0, rawHours - 0.50); // -30 min break
     } else {
-      calculatedPaidHours = rawHours + (40 / 60);
+      calculatedPaidHours = rawHours + (40 / 60); // +40 min no-break bonus
     }
 
-    if (container === '20ft') calculatedPaidHours += (10 / 60);
-    if (container === '40ft') calculatedPaidHours += (20 / 60);
+    if (container === '20ft') calculatedPaidHours += (10 / 60); // +10 min
+    if (container === '40ft') calculatedPaidHours += (20 / 60); // +20 min
 
     return calculatedPaidHours.toFixed(2);
   };
 
-  // 3. Strict Geolocation Clock-In with Dynamic Site Bounds
+  // 3. Clock In with Strict GPS Check
   const handleStartClockIn = () => {
     setLoading(true);
-    setMsg({ text: `📡 Verifying GPS location for site: ${allocatedSite.name}...`, isError: false });
+    setMsg({ text: `📡 Verifying live GPS position for site: ${allocatedSite.name}...`, isError: false });
 
     if (!allocatedSite.lat || !allocatedSite.lng) {
       setMsg({
-        text: `⚠️ Location coordinates for "${allocatedSite.name}" are not set in the database. Please contact your manager.`,
+        text: `⚠️ GPS coordinates for "${allocatedSite.name}" are missing in database. Please ask admin to save location address.`,
         isError: true,
       });
       setLoading(false);
@@ -279,7 +295,7 @@ export default function TimeClock({ employee, scheduledShift }) {
         const positionTimestamp = position.timestamp;
         const nowTimestamp = Date.now();
 
-        // 1. Block stale cached location (> 15 seconds old)
+        // Block stale cached coordinates (> 15 seconds)
         if (nowTimestamp - positionTimestamp > 15000) {
           setMsg({
             text: '❌ Stale GPS position detected. Please refresh the page with active location permissions.',
@@ -289,7 +305,7 @@ export default function TimeClock({ employee, scheduledShift }) {
           return;
         }
 
-        // 2. Strict accuracy check (< 200m required)
+        // Require high-accuracy signal (< 200m)
         if (accuracy > 200) {
           setMsg({
             text: `❌ GPS accuracy too low (${Math.round(accuracy)}m). Please clock in using a mobile phone with High-Precision GPS enabled.`,
@@ -299,7 +315,7 @@ export default function TimeClock({ employee, scheduledShift }) {
           return;
         }
 
-        // 3. Calculate distance against dynamic database site coordinates
+        // Distance check against dynamically resolved GPS coordinates
         const distance = calculateDistanceKm(userLat, userLng, allocatedSite.lat, allocatedSite.lng);
 
         if (distance > allocatedSite.maxDistanceKm) {
@@ -477,7 +493,7 @@ export default function TimeClock({ employee, scheduledShift }) {
               marginBottom: '10px',
             }}
           >
-            ☕ No Break 
+            ☕ No Break Worked (+40 min)
           </button>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
@@ -505,7 +521,7 @@ export default function TimeClock({ employee, scheduledShift }) {
                 color: containerType === '20ft' ? '#15803d' : '#334155',
               }}
             >
-              📦 20 ft 
+              📦 20 ft (+10m)
             </button>
 
             <button
@@ -519,7 +535,7 @@ export default function TimeClock({ employee, scheduledShift }) {
                 color: containerType === '40ft' ? '#7e22ce' : '#334155',
               }}
             >
-              📦 40 ft 
+              📦 40 ft (+20m)
             </button>
           </div>
         </div>

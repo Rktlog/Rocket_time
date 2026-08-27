@@ -57,56 +57,40 @@ export default function AdminPanel({ onDataChange }) {
     }
   };
 
-  // Helper to format 4 address parts into a single string
   const formatAddress = (street, suburb, state, postcode) => {
     return [street, suburb, state, postcode].filter(Boolean).join(', ');
   };
 
-  // Multi-Strategy Background Geocoding (OpenStreetMap Nominatim)
+  // Multi-Strategy Background Geocoding
   const geocodeAddress = async (street, suburb, state, postcode) => {
-    const headers = {
-      'Accept-Language': 'en',
-      'User-Agent': 'EmployeeTimeClockApp/1.0'
-    };
-
+    const headers = { 'Accept-Language': 'en' };
+    
     try {
-      // Strategy 1: Search exact full address
-      const fullQuery = `${street}, ${suburb}, ${state} ${postcode}, Australia`;
-      let res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullQuery)}`,
-        { headers }
-      );
+      // Strategy 1: Full specific street address
+      const query1 = `${street}, ${suburb}, ${state} ${postcode}, Australia`;
+      let res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query1)}`, { headers });
       let data = await res.json();
 
       if (data && data.length > 0) {
-        return {
-          lat: parseFloat(data[0].lat),
-          lng: parseFloat(data[0].lon)
-        };
+        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
       }
 
-      // Strategy 2: Fall back to Suburb + State + Postcode
-      const fallbackQuery = `${suburb}, ${state} ${postcode}, Australia`;
-      res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fallbackQuery)}`,
-        { headers }
-      );
+      // Strategy 2: Suburb + State + Postcode fallback
+      const query2 = `${suburb}, ${state} ${postcode}, Australia`;
+      res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query2)}`, { headers });
       data = await res.json();
 
       if (data && data.length > 0) {
-        return {
-          lat: parseFloat(data[0].lat),
-          lng: parseFloat(data[0].lon)
-        };
+        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
       }
     } catch (err) {
-      console.warn('Background geocoding error:', err);
+      console.warn('Geocoding error:', err);
     }
 
     return { lat: null, lng: null };
   };
 
-  // Add New Site (With Silent Background Geocoding)
+  // Add New Site
   const handleAddSite = async (e) => {
     e.preventDefault();
     if (!newSiteName.trim()) return;
@@ -164,7 +148,7 @@ export default function AdminPanel({ onDataChange }) {
     setEditAssignedDept(site.department || (departments[0]?.name || ''));
   };
 
-  // Save Site Edit (With Silent Background Geocoding)
+  // Save Site Edit
   const handleUpdateSite = async (e) => {
     e.preventDefault();
     setMsg({ text: '📡 Updating GPS coordinates and site details...', isError: false });
