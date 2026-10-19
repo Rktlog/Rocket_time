@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
-const DAYS_OF_WEEK = ['Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday'];
+const DAYS_OF_WEEK = ['Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
 
 export default function ManagerRosterManager({ department }) {
   const [activeSubTab, setActiveTab] = useState('approved'); // 'approved' or 'grid'
@@ -26,14 +26,14 @@ export default function ManagerRosterManager({ department }) {
     return `${year}-${month}-${day}`;
   }
 
-  // Calculate start of week starting on THURSDAY
+  // Calculate start of week starting on FRIDAY
   function getStartOfWeek(d) {
     const date = new Date(d);
-    const day = date.getDay(); // Sunday = 0, Monday = 1, ..., Thursday = 4
-    const diff = date.getDate() - day + (day < 4 ? -3 : 4);
-    const thursday = new Date(date.setDate(diff));
-    thursday.setHours(0, 0, 0, 0);
-    return thursday;
+    const day = date.getDay(); // Sunday = 0, Monday = 1, ..., Friday = 5
+    const diff = date.getDate() - day + (day < 5 ? -2 : 5);
+    const friday = new Date(date.setDate(diff));
+    friday.setHours(0, 0, 0, 0);
+    return friday;
   }
 
   const changeWeek = (offset) => {
@@ -81,10 +81,14 @@ export default function ManagerRosterManager({ department }) {
         const cleanStart = a.start_time ? String(a.start_time).slice(0, 5) : '08:30';
         const cleanEnd = a.end_time ? String(a.end_time).slice(0, 5) : '16:30';
 
-        availMap[`${a.user_id}_${a.day}`] = {
+        const k = `${a.user_id}_${a.day}`;
+        const isSpecific = a.week_start === weekStartStr;
+        if (!isSpecific && availMap[k]?.specific) return; // week-specific row wins over template
+        availMap[k] = {
           isAvailable: Boolean(a.is_available),
           startTime: cleanStart,
-          endTime: cleanEnd
+          endTime: cleanEnd,
+          specific: isSpecific
         };
       });
       setAvailabilities(availMap);
@@ -203,6 +207,7 @@ export default function ManagerRosterManager({ department }) {
           // Process only shifts that belong to this week
           if (datesOfWeek.includes(dateStr)) {
             const staffObj = staffList.find(s => s.id === userId);
+            if (!staffObj) return; // never touch shifts of staff outside this department
 
             const startTimeStr = value.startTime.length === 5 ? `${value.startTime}:00` : value.startTime;
             const endTimeStr = value.endTime.length === 5 ? `${value.endTime}:00` : value.endTime;
@@ -228,21 +233,26 @@ export default function ManagerRosterManager({ department }) {
 
       const recordsToUpsert = Array.from(recordsMap.values());
 
-      // 1. Delete all existing DB shifts for the 7 dates of this week
-      const { error: deleteErr } = await supabase
-        .from('shifts')
-        .delete()
-        .in('shift_date', datesOfWeek);
+      // Only shifts for THIS department's staff are ever changed.
+      const staffIds = new Set(staffList.map(s => s.id));
+      const keepKeys = new Set(recordsToUpsert.map(rec => `${rec.user_id}_${rec.shift_date}`));
+      const removeIds = publishedShifts
+        .filter(s => staffIds.has(s.user_id) && !keepKeys.has(`${s.user_id}_${s.shift_date}`))
+        .map(s => s.id);
 
-      if (deleteErr) throw deleteErr;
-
-      // 2. Insert fresh active draft shifts
+      // 1. Save active shifts first (a failure here changes nothing)
       if (recordsToUpsert.length > 0) {
         const { error: upsertErr } = await supabase
           .from('shifts')
-          .upsert(recordsToUpsert, { onConflict: 'user_id, shift_date' });
+          .upsert(recordsToUpsert, { onConflict: 'user_id,shift_date' });
 
         if (upsertErr) throw upsertErr;
+      }
+
+      // 2. Then remove only the shifts the manager unassigned
+      if (removeIds.length > 0) {
+        const { error: deleteErr } = await supabase.from('shifts').delete().in('id', removeIds);
+        if (deleteErr) throw deleteErr;
       }
 
       setMsg({ text: '✅ Roster saved and published for this week!', isError: false });

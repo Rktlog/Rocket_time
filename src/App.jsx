@@ -1,6 +1,8 @@
 // src/App.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './lib/supabaseClient';
+import { formatLocalDate, getStartOfWeek } from './lib/dates';
+import { verifyPassword } from './lib/auth';
 
 // Sub-components
 import AdminPanel from './components/AdminPanel';
@@ -71,6 +73,18 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+function buildUser(authUser, profile) {
+  const role = String(profile?.role || 'user').toLowerCase().trim();
+  return {
+    id: authUser.id,
+    name: profile?.full_name || authUser.user_metadata?.full_name || authUser.email.split('@')[0],
+    email: authUser.email,
+    role,
+    department: profile?.department || authUser.user_metadata?.department_name || 'englite',
+    location: profile?.location || 'Englite campbellfield',
+  };
+}
+
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loadingSession, setLoadingSession] = useState(true);
@@ -84,19 +98,23 @@ export default function App() {
   const [inviteSent, setInviteSent] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [sites, setSites] = useState([]);
+  const userIdRef = useRef(null);
 
   useEffect(() => {
     fetchDepartmentsAndSites();
     checkExistingSession();
 
-    // Listen for real-time auth state changes (persist login on refresh)
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        await restoreUserProfile(session.user);
-      } else {
-        setCurrentUser(null);
-      }
-      setLoadingSession(false);
+    // Do not await Supabase calls inside this callback (can deadlock). Defer them.
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setTimeout(async () => {
+        if (!session?.user) {
+          userIdRef.current = null;
+          setCurrentUser(null);
+        } else {
+          await restoreUserProfile(session.user); // no-op if this user is already loaded
+        }
+        setLoadingSession(false);
+      }, 0);
     });
 
     return () => {
@@ -117,30 +135,22 @@ export default function App() {
     }
   };
 
+  // Only loads when the signed-in user changes, so token refreshes / tab refocus
+  // no longer replace currentUser and reset forms.
   const restoreUserProfile = async (authUser) => {
+    if (userIdRef.current === authUser.id) return;
+    userIdRef.current = authUser.id;
     try {
       const { data: profile } = await supabase
         .from('profiles')
         .select('full_name, role, department, location')
         .eq('id', authUser.id)
-        .single();
+        .maybeSingle();
 
-      const rawRole = profile?.role || authUser.user_metadata?.role || 'user';
-      const userRole = String(rawRole).toLowerCase().trim();
-
-      const userName = profile?.full_name || authUser.user_metadata?.full_name || authUser.email.split('@')[0];
-      const userDept = profile?.department || authUser.user_metadata?.department_name || 'englite';
-      const userLoc = profile?.location || 'Englite campbellfield';
-
-      setCurrentUser({
-        id: authUser.id,
-        name: userName,
-        email: authUser.email,
-        role: userRole,
-        department: userDept,
-        location: userLoc,
-      });
+      setCurrentUser(buildUser(authUser, profile));
+      fetchDepartmentsAndSites(); // refetch now that we are authenticated
     } catch (err) {
+      userIdRef.current = null;
       console.error('Error fetching profile on restore:', err);
     }
   };
@@ -169,25 +179,26 @@ export default function App() {
 
     const targetDept = overrideDept || inviteDept;
     const targetSite = overrideSite || inviteSite;
+    const email = inviteEmail.trim().toLowerCase();
 
-    try {
-      await supabase.from('invitations').insert([
-        {
-          full_name: inviteFullName,
-          email: inviteEmail,
-          department: targetDept,
-          location: targetSite,
-          employment_type: employmentType,
-        },
-      ]);
-    } catch (err) {
-      console.log('Invite recorded');
+    const { error } = await supabase.from('invitations').insert([
+      {
+        full_name: inviteFullName,
+        email,
+        department: targetDept,
+        location: targetSite,
+        employment_type: employmentType,
+      },
+    ]);
+
+    if (error) {
+      setInviteSent({ ok: false, email, error: error.message });
+    } else {
+      setInviteSent({ ok: true, email });
+      setInviteFullName('');
+      setInviteEmail('');
     }
-
-    setInviteSent(true);
-    setTimeout(() => setInviteSent(false), 4000);
-    setInviteFullName('');
-    setInviteEmail('');
+    setTimeout(() => setInviteSent(false), 6000);
   };
 
   const handleLogout = async () => {
@@ -198,6 +209,7 @@ export default function App() {
     } finally {
       localStorage.clear();
       sessionStorage.clear();
+      userIdRef.current = null;
       setCurrentUser(null);
     }
   };
@@ -238,7 +250,7 @@ export default function App() {
       {/* MAIN CONTENT AREA WITH ERROR BOUNDARY */}
       <main style={mainContentStyle}>
         {!currentUser ? (
-          <MasterLoginPortal onLoginSuccess={setCurrentUser} />
+          <MasterLoginPortal onLoginSuccess={restoreUserProfile} />
         ) : (
           <ErrorBoundary>
             {currentUser.role === 'admin' && (
@@ -307,27 +319,7 @@ function MasterLoginPortal({ onLoginSuccess }) {
       if (error) throw error;
 
       if (data?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('full_name, role, department, location')
-          .eq('id', data.user.id)
-          .single();
-
-        const rawRole = profile?.role || data.user.user_metadata?.role || 'user';
-        const userRole = String(rawRole).toLowerCase().trim();
-
-        const userName = profile?.full_name || data.user.user_metadata?.full_name || email.split('@')[0];
-        const userDept = profile?.department || data.user.user_metadata?.department_name || 'englite';
-        const userLoc = profile?.location || 'Englite campbellfield';
-
-        onLoginSuccess({
-          id: data.user.id,
-          name: userName,
-          email: data.user.email,
-          role: userRole,
-          department: userDept,
-          location: userLoc,
-        });
+        await onLoginSuccess(data.user);
       }
     } catch (err) {
       setErrorMsg('❌ ' + (err.message || 'Invalid credentials. Please try again.'));
@@ -439,7 +431,7 @@ function AdminDashboard({
                 </select>
                 <button type="submit" style={btnStyle('#2563eb')}>Send Invite Link 🚀</button>
               </form>
-              {inviteSent && <div style={successBannerStyle}>✅ Invitation sent to {inviteEmail}!</div>}
+              {inviteSent && <div style={inviteSent.ok ? successBannerStyle : errorAlertStyle}>{inviteSent.ok ? `✅ Invite saved for ${inviteSent.email}. No email goes out automatically, so send them the sign-up link yourself.` : `❌ Invite failed: ${inviteSent.error}`}</div>}
             </div>
           </div>
         )}
@@ -485,7 +477,7 @@ function ManagerDashboard({
       </aside>
 
       <div style={panelStyle}>
-        {activeTab === 'timeclock' && <TimeClock employee={{ name: currentUser.name, department: currentUser.department, location: currentUser.location }} />}
+        {activeTab === 'timeclock' && <TimeClock employee={{ id: currentUser.id, name: currentUser.name, department: currentUser.department, location: currentUser.location }} />}
         {activeTab === 'mytimesheet' && <MyTimesheet user={currentUser} />}
         {activeTab === 'users' && <ManagerStaffListView currentDepartment={currentUser.department} />}
         {activeTab === 'availability' && <ManagerInstantAvailabilityView department={currentUser.department} location={currentUser.location} />}
@@ -530,7 +522,7 @@ function ManagerDashboard({
 
                 <button type="submit" style={btnStyle('#0f172a')}>Send Invite Link 🚀</button>
               </form>
-              {inviteSent && <div style={{ ...successBannerStyle, marginTop: '16px' }}>✅ Invitation sent to {inviteEmail}!</div>}
+              {inviteSent && <div style={{ ...(inviteSent.ok ? successBannerStyle : errorAlertStyle), marginTop: '16px' }}>{inviteSent.ok ? `✅ Invite saved for ${inviteSent.email}. No email goes out automatically, so send them the sign-up link yourself.` : `❌ Invite failed: ${inviteSent.error}`}</div>}
             </div>
           </div>
         )}
@@ -561,7 +553,7 @@ function UserDashboard({ currentUser }) {
 
       <div style={panelStyle}>
         {activeTab === 'offers' && <PendingOffersView user={currentUser} />}
-        {activeTab === 'timeclock' && <TimeClock employee={{ name: currentUser.name, department: currentUser.department, location: currentUser.location }} />}
+        {activeTab === 'timeclock' && <TimeClock employee={{ id: currentUser.id, name: currentUser.name, department: currentUser.department, location: currentUser.location }} />}
         {activeTab === 'roster' && <ShiftRoster user={currentUser} />}
         {activeTab === 'availability' && <WeeklyAvailability user={currentUser} />}
         {activeTab === 'timesheet' && <MyTimesheet user={currentUser} />}
@@ -572,25 +564,15 @@ function UserDashboard({ currentUser }) {
 }
 
 /* =========================================
-   INSTANT STAFF AVAILABILITY VIEW (THURSDAY CYCLE)
+   INSTANT STAFF AVAILABILITY VIEW (FRIDAY CYCLE)
    ========================================= */
 function ManagerInstantAvailabilityView({ department, location }) {
   const [currentWeekStart, setCurrentWeekStart] = useState(getStartOfWeek(new Date()));
-  const [selectedDay, setSelectedDay] = useState('Thursday');
+  const [selectedDay, setSelectedDay] = useState('Friday');
   const [staffRoster, setStaffRoster] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sendingId, setSendingId] = useState(null);
   const [msg, setMsg] = useState('');
-
-  // Calculate start of week starting on THURSDAY
-  function getStartOfWeek(d) {
-    const date = new Date(d);
-    const day = date.getDay(); // Sunday = 0, Monday = 1, ..., Thursday = 4
-    const diff = date.getDate() - day + (day < 4 ? -3 : 4);
-    const thursday = new Date(date.setDate(diff));
-    thursday.setHours(0, 0, 0, 0);
-    return thursday;
-  }
 
   const changeWeek = (offset) => {
     const newDate = new Date(currentWeekStart);
@@ -604,7 +586,7 @@ function ManagerInstantAvailabilityView({ department, location }) {
 
   const fetchAvailableStaff = async () => {
     setLoading(true);
-    const weekStartStr = currentWeekStart.toISOString().split('T')[0];
+    const weekStartStr = formatLocalDate(currentWeekStart);
 
     try {
       const { data: profiles, error: pErr } = await supabase
@@ -634,13 +616,15 @@ function ManagerInstantAvailabilityView({ department, location }) {
 
       const availMap = {};
       (availData || []).forEach((a) => {
-        if (!a.week_start || a.week_start === weekStartStr) {
-          availMap[a.user_id] = {
-            isAvailable: Boolean(a.is_available),
-            startTime: a.start_time ? String(a.start_time).slice(0, 5) : '08:30',
-            endTime: a.end_time ? String(a.end_time).slice(0, 5) : '16:30',
-          };
-        }
+        const isSpecific = a.week_start === weekStartStr;
+        if (a.week_start && !isSpecific) return; // other week
+        if (!isSpecific && availMap[a.user_id]?.specific) return; // week-specific row wins
+        availMap[a.user_id] = {
+          isAvailable: Boolean(a.is_available),
+          startTime: a.start_time ? String(a.start_time).slice(0, 5) : '08:30',
+          endTime: a.end_time ? String(a.end_time).slice(0, 5) : '16:30',
+          specific: isSpecific,
+        };
       });
 
       const processed = activeStaff.map((staff) => {
@@ -666,19 +650,32 @@ function ManagerInstantAvailabilityView({ department, location }) {
 
   const handleSendInstantOffer = async (staffMember) => {
     setSendingId(staffMember.id);
-    const daysArr = ['Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday'];
+    const daysArr = ['Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
     const dayIndex = daysArr.indexOf(selectedDay);
     const shiftDateObj = new Date(currentWeekStart);
     shiftDateObj.setDate(shiftDateObj.getDate() + dayIndex);
-    const shiftDateStr = shiftDateObj.toISOString().split('T')[0];
+    const shiftDateStr = formatLocalDate(shiftDateObj);
 
     try {
+      const { data: existing } = await supabase
+        .from('shift_offers')
+        .select('id')
+        .eq('employee_id', staffMember.id)
+        .eq('shift_date', shiftDateStr)
+        .eq('status', 'Pending')
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        setMsg(`⚠️ ${staffMember.full_name || staffMember.name} already has a pending offer for ${shiftDateStr}.`);
+        return;
+      }
+
       const { error } = await supabase.from('shift_offers').insert([
         {
           employee_id: staffMember.id,
           employee_email: (staffMember.email || '').trim().toLowerCase(),
           day: selectedDay,
-          week_start: currentWeekStart.toISOString().split('T')[0],
+          week_start: formatLocalDate(currentWeekStart),
           shift_date: shiftDateStr,
           location: location || 'Englite campbellfield',
           shift_time: staffMember.timing || '08:30 - 16:30',
@@ -715,7 +712,7 @@ function ManagerInstantAvailabilityView({ department, location }) {
       </div>
 
       <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '4px' }}>
-        {['Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday'].map((day, idx) => {
+        {['Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].map((day, idx) => {
           const dateObj = new Date(currentWeekStart);
           dateObj.setDate(dateObj.getDate() + idx);
           return (
@@ -853,7 +850,7 @@ function PendingOffersView({ user }) {
       const { data: offersData, error: offersErr } = await supabase
         .from('shift_offers')
         .select('*')
-        .or(`employee_email.ilike.${cleanEmail},employee_id.eq.${user.id}`)
+        .or(`employee_email.eq.${cleanEmail},employee_id.eq.${user.id}`)
         .eq('status', 'Pending');
 
       if (offersErr) console.warn('shift_offers fetch warning:', offersErr.message);
@@ -861,7 +858,7 @@ function PendingOffersView({ user }) {
       const { data: shiftsData, error: shiftsErr } = await supabase
         .from('shifts')
         .select('*')
-        .or(`user_id.eq.${user.id},offered_to_email.ilike.${cleanEmail}`)
+        .eq('user_id', user.id)
         .eq('status', 'Pending');
 
       if (shiftsErr) console.warn('shifts fetch warning:', shiftsErr.message);
@@ -882,50 +879,48 @@ function PendingOffersView({ user }) {
 
   const handleAccept = async (offer) => {
     try {
-      const targetDate = offer.shift_date || offer.date;
-      const cleanEmail = (user.email || '').trim().toLowerCase();
+      if (offer.source === 'shifts') {
+        // Already a roster row: just confirm it.
+        const { error } = await supabase.from('shifts').update({ status: 'Accepted' }).eq('id', offer.id);
+        if (error) throw error;
+      } else {
+        const targetDate = offer.shift_date;
+        if (!targetDate) throw new Error('This offer has no date.');
+        const cleanEmail = (user.email || '').trim().toLowerCase();
 
-      if (offer.source === 'shift_offers') {
+        const parts = String(offer.shift_time || '08:30 - 16:30').split('-').map((p) => p.trim());
+        const toSec = (t) => (t.length === 5 ? `${t}:00` : t);
+        const startIso = new Date(`${targetDate}T${toSec(parts[0] || '08:30')}`).toISOString();
+        const endIso = new Date(`${targetDate}T${toSec(parts[1] || '16:30')}`).toISOString();
+
+        // Create the shift first, so a failure never leaves an Accepted offer with no shift.
+        const { error: shiftErr } = await supabase
+          .from('shifts')
+          .upsert(
+            [
+              {
+                user_id: user.id,
+                employee_name: user.name || 'Employee',
+                offered_to_email: cleanEmail,
+                department: user.department || 'englite',
+                shift_date: targetDate,
+                start_time: startIso,
+                end_time: endIso,
+                status: 'Accepted',
+              },
+            ],
+            { onConflict: 'user_id,shift_date' }
+          );
+        if (shiftErr) throw shiftErr;
+
         const { error: offerErr } = await supabase
           .from('shift_offers')
           .update({ status: 'Accepted' })
           .eq('id', offer.id);
-
         if (offerErr) throw offerErr;
       }
 
-      const rawTime = offer.shift_time || '08:30 - 16:30';
-      const [startTimeStr, endTimeStr] = rawTime.includes('-') ? rawTime.split('-') : ['08:30', '16:30'];
-      const cleanStart = startTimeStr ? startTimeStr.trim() : '08:30';
-      const cleanEnd = endTimeStr ? endTimeStr.trim() : '16:30';
-
-      const formattedStart = cleanStart.length === 5 ? `${cleanStart}:00` : cleanStart;
-      const formattedEnd = cleanEnd.length === 5 ? `${cleanEnd}:00` : cleanEnd;
-
-      const startIso = new Date(`${targetDate}T${formattedStart}`).toISOString();
-      const endIso = new Date(`${targetDate}T${formattedEnd}`).toISOString();
-
-      const { error: shiftErr } = await supabase
-        .from('shifts')
-        .upsert(
-          [
-            {
-              user_id: user.id,
-              employee_name: user.name || user.full_name || 'Employee',
-              offered_to_email: cleanEmail,
-              department: user.department || 'englite',
-              shift_date: targetDate,
-              start_time: startIso,
-              end_time: endIso,
-              status: 'Accepted',
-            },
-          ],
-          { onConflict: 'user_id, shift_date' }
-        );
-
-      if (shiftErr) throw shiftErr;
-
-      setShiftOffers(prev => prev.filter(o => o.id !== offer.id));
+      setShiftOffers((prev) => prev.filter((o) => !(o.id === offer.id && o.source === offer.source)));
       setMsg({ text: '✅ Shift accepted! It is now live on your roster.', isError: false });
     } catch (err) {
       console.error('Accept offer error:', err);
@@ -1027,7 +1022,7 @@ function PendingOffersView({ user }) {
                 </div>
 
                 <div style={{ fontSize: '11px', color: '#475569', marginBottom: '12px', wordBreak: 'break-word' }}>
-                  📍 <strong>Location:</strong> Englite Campbellfield
+                  📍 <strong>Location:</strong> {offer.location || user.location || 'Not set'}
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -1081,32 +1076,32 @@ function AdminUserRoleManagementView() {
 
   const toggleRole = async (userId, currentRole) => {
     const normRole = String(currentRole || 'user').toLowerCase().trim();
+    if (normRole === 'admin') return; // never change an admin from here
     const newRole = normRole === 'manager' ? 'user' : 'manager';
 
     try {
       const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
-      if (!error) {
-        setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
-        setMsg(`✅ Role updated! User is now a ${newRole.toUpperCase()}.`);
-        setTimeout(() => setMsg(''), 4000);
-      }
+      if (error) throw error;
+      setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
+      setMsg(`✅ Role updated! User is now a ${newRole.toUpperCase()}.`);
     } catch (err) {
-      console.error(err);
+      setMsg(`❌ Role update failed: ${err.message}`);
     }
+    setTimeout(() => setMsg(''), 4000);
   };
 
   const handleSaveModalProfile = async (updatedProfile) => {
     try {
-      const { error } = await supabase.from('profiles').upsert(updatedProfile);
-      if (!error) {
-        setUsers(users.map(u => u.id === updatedProfile.id ? updatedProfile : u));
-        setSelectedUserModal(null);
-        setMsg(`✅ Profile record updated!`);
-        setTimeout(() => setMsg(''), 4000);
-      }
+      const { id, ...fields } = updatedProfile;
+      const { error } = await supabase.from('profiles').update(fields).eq('id', id);
+      if (error) throw error;
+      setUsers(users.map(u => u.id === id ? { ...u, ...fields } : u)); // keep role, department etc.
+      setSelectedUserModal(null);
+      setMsg(`✅ Profile record updated!`);
     } catch (err) {
-      console.error(err);
+      setMsg(`❌ Profile update failed: ${err.message}`);
     }
+    setTimeout(() => setMsg(''), 4000);
   };
 
   const filteredUsers = users.filter(u =>
@@ -1174,7 +1169,7 @@ function AdminUserRoleManagementView() {
                           <button onClick={() => setSelectedUserModal(u)} style={editBtnStyle}>
                             👁️ View
                           </button>
-                          {normRole === 'manager' ? (
+                          {normRole === 'admin' ? null : normRole === 'manager' ? (
                             <button onClick={() => toggleRole(u.id, u.role)} style={demoteBtnStyle}>
                               ⬇️ Demote
                             </button>
@@ -1242,11 +1237,12 @@ function ManagerStaffListView({ currentDepartment }) {
   const confirmRemoval = async () => {
     if (!userToRemove) return;
     try {
-      await supabase.from('profiles').update({ department: 'Unassigned' }).eq('id', userToRemove.id);
+      const { error } = await supabase.from('profiles').update({ department: 'Unassigned' }).eq('id', userToRemove.id);
+      if (error) throw error;
       setDeptStaff(deptStaff.filter(u => u.id !== userToRemove.id));
       setMsg(`✅ Removed ${userToRemove.full_name || userToRemove.name} from roster.`);
     } catch (err) {
-      setDeptStaff(deptStaff.filter(u => u.id !== userToRemove.id));
+      setMsg(`❌ Remove failed: ${err.message}`);
     } finally {
       setUserToRemove(null);
       setTimeout(() => setMsg(''), 4000);
@@ -1398,7 +1394,7 @@ function AdminEmployeeProfileModal({ userData, onClose, onSave }) {
    ========================================= */
 function AdminReportSchedulerView() {
   const [recipientEmail, setRecipientEmail] = useState('');
-  const [dispatchDay, setDispatchDay] = useState('Thursday');
+  const [dispatchDay, setDispatchDay] = useState('Friday');
   const [dispatchTime, setDispatchTime] = useState('08:00');
   const [frequency, setFrequency] = useState('Weekly');
   const [schedules, setSchedules] = useState([]);
@@ -1423,27 +1419,25 @@ function AdminReportSchedulerView() {
 
     const newObj = { email: recipientEmail, day: dispatchDay, time: dispatchTime, freq: frequency };
 
-    try {
-      const { data, error } = await supabase.from('report_schedules').insert([newObj]).select();
-      if (!error && data) {
-        setSchedules([...schedules, data[0]]);
-      } else {
-        setSchedules([...schedules, { id: Date.now().toString(), ...newObj }]);
-      }
-    } catch (err) {
-      setSchedules([...schedules, { id: Date.now().toString(), ...newObj }]);
+    const { data, error } = await supabase.from('report_schedules').insert([newObj]).select();
+    if (error || !data) {
+      setMsg(`❌ Could not save schedule: ${error?.message || 'unknown error'}`);
+      setTimeout(() => setMsg(''), 4000);
+      return;
     }
 
-    setMsg(`✅ Scheduled automated ${frequency} report to ${recipientEmail} on ${dispatchDay}s at ${dispatchTime}!`);
+    setSchedules([...schedules, data[0]]);
+    setMsg(`✅ Saved ${frequency} report to ${recipientEmail} on ${dispatchDay}s at ${dispatchTime}.`);
     setTimeout(() => setMsg(''), 4000);
     setRecipientEmail('');
   };
 
   const handleDeleteSchedule = async (id) => {
-    try {
-      await supabase.from('report_schedules').delete().eq('id', id);
-    } catch (err) {
-      console.error(err);
+    const { error } = await supabase.from('report_schedules').delete().eq('id', id);
+    if (error) {
+      setMsg(`❌ Could not remove schedule: ${error.message}`);
+      setTimeout(() => setMsg(''), 4000);
+      return;
     }
     setSchedules(schedules.filter(s => s.id !== id));
   };
@@ -1487,7 +1481,7 @@ function AdminReportSchedulerView() {
                   onChange={(e) => setDispatchDay(e.target.value)}
                   style={{ ...inputStyle, width: '100%', marginBottom: 0 }}
                 >
-                  {['Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday'].map(day => (
+                  {['Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].map(day => (
                     <option key={day} value={day}>{day}</option>
                   ))}
                 </select>
@@ -1540,7 +1534,7 @@ function AdminReportSchedulerView() {
 }
 
 /* =========================================
-   EXPANDABLE WEEKLY TIMESHEETS (THURSDAY CYCLE)
+   EXPANDABLE WEEKLY TIMESHEETS (FRIDAY CYCLE)
    ========================================= */
 function DepartmentTimeLogsView({ department }) {
   const [currentWeekStart, setCurrentWeekStart] = useState(getStartOfWeek(new Date()));
@@ -1552,16 +1546,6 @@ function DepartmentTimeLogsView({ department }) {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [msg, setMsg] = useState({ text: '', isError: false });
-
-  // Calculate start of week starting on THURSDAY
-  function getStartOfWeek(d) {
-    const date = new Date(d);
-    const day = date.getDay(); // Sunday = 0, Monday = 1, ..., Thursday = 4
-    const diff = date.getDate() - day + (day < 4 ? -3 : 4);
-    const thursday = new Date(date.setDate(diff));
-    thursday.setHours(0, 0, 0, 0);
-    return thursday;
-  }
 
   const changeWeek = (offset) => {
     const newDate = new Date(currentWeekStart);
@@ -1590,7 +1574,7 @@ function DepartmentTimeLogsView({ department }) {
         .lt('clock_in', weekEnd.toISOString());
 
       if (department && department !== 'All Departments') {
-        query = query.or(`department.ilike.%${department.trim()}%,department.is.null`);
+        query = query.ilike('department', `%${department.trim()}%`);
       }
 
       const { data, error } = await query;
@@ -1601,9 +1585,10 @@ function DepartmentTimeLogsView({ department }) {
         const grouped = {};
         data.forEach(log => {
           const empName = log.employee_name || 'Employee';
-          if (!grouped[empName]) {
-            grouped[empName] = {
-              id: log.id,
+          const groupKey = log.user_id || empName;
+          if (!grouped[groupKey]) {
+            grouped[groupKey] = {
+              id: groupKey,
               userId: log.user_id,
               name: empName,
               dept: log.department || department || 'englite',
@@ -1614,11 +1599,11 @@ function DepartmentTimeLogsView({ department }) {
             };
           }
 
-          grouped[empName].logIds.push(log.id);
-          grouped[empName].weeklyTotalHours += parseFloat(log.total_hours || 0);
+          grouped[groupKey].logIds.push(log.id);
+          grouped[groupKey].weeklyTotalHours += parseFloat(log.total_hours || 0);
 
           if (log.status !== 'Approved') {
-            grouped[empName].status = 'Pending Review';
+            grouped[groupKey].status = 'Pending Review';
           }
 
           const clockInObj = new Date(log.clock_in);
@@ -1628,7 +1613,7 @@ function DepartmentTimeLogsView({ department }) {
           const timeInStr = `${pad(clockInObj.getHours())}:${pad(clockInObj.getMinutes())}`;
           const timeOutStr = clockOutObj ? `${pad(clockOutObj.getHours())}:${pad(clockOutObj.getMinutes())}` : 'Active';
 
-          grouped[empName].shifts.push({
+          grouped[groupKey].shifts.push({
             logId: log.id,
             rawClockIn: log.clock_in,
             rawClockOut: log.clock_out,
@@ -1663,10 +1648,14 @@ function DepartmentTimeLogsView({ department }) {
     setMsg({ text: '', isError: false });
 
     try {
+      // Only completed shifts can be approved
+      const closedIds = empSummary.shifts.filter((s) => s.rawClockOut).map((s) => s.logId);
+      if (closedIds.length === 0) throw new Error('No completed shifts to approve yet.');
+
       const { error } = await supabase
         .from('time_logs')
         .update({ status: 'Approved' })
-        .in('id', empSummary.logIds);
+        .in('id', closedIds);
 
       if (error) throw error;
 
@@ -1684,20 +1673,22 @@ function DepartmentTimeLogsView({ department }) {
     setProcessing(true);
     setMsg({ text: '', isError: false });
 
-    const weekEnd = new Date(currentWeekStart);
-    weekEnd.setDate(weekEnd.getDate() + 7);
-
     try {
-      let query = supabase
-        .from('time_logs')
-        .update({ status: 'Approved' })
-        .gte('clock_in', currentWeekStart.toISOString())
-        .lt('clock_in', weekEnd.toISOString());
+      // Only the completed, unapproved shifts currently shown (so only this department)
+      const ids = weeklySummaries
+        .flatMap((emp) => emp.shifts)
+        .filter((s) => s.rawClockOut && s.status !== 'Approved')
+        .map((s) => s.logId);
 
-      const { error } = await query;
+      if (ids.length === 0) {
+        setMsg({ text: 'Nothing left to approve for this week.', isError: false });
+        return;
+      }
+
+      const { error } = await supabase.from('time_logs').update({ status: 'Approved' }).in('id', ids);
       if (error) throw error;
 
-      setMsg({ text: '🚀 Time logs for this week bulk approved!', isError: false });
+      setMsg({ text: `🚀 Approved ${ids.length} completed shift${ids.length === 1 ? '' : 's'}!`, isError: false });
       await fetchTimeLogs();
     } catch (err) {
       setMsg({ text: `❌ Bulk approval failed: ${err.message}`, isError: true });
@@ -1949,7 +1940,7 @@ function UserProfileSettingsView({ user, role }) {
 
   useEffect(() => {
     fetchCurrentProfile();
-  }, [user]);
+  }, [user?.id]);
 
   const fetchCurrentProfile = async () => {
     if (!user?.id) return;
@@ -1971,33 +1962,27 @@ function UserProfileSettingsView({ user, role }) {
     setSaving(true);
     setMsg({ text: '', isError: false });
 
-    if (newPassword || confirmPassword) {
-      if (newPassword !== confirmPassword) {
-        setMsg({ text: '❌ New passwords do not match.', isError: true });
-        setSaving(false);
-        return;
-      }
-      try {
-        await supabase.auth.updateUser({ password: newPassword });
-      } catch (err) {
-        console.error('Password update error:', err);
-      }
-    }
-
     try {
-      const { error } = await supabase.from('profiles').upsert({
-        id: user.id,
-        full_name: fullName,
-        email,
-        address,
-        phone,
-        updated_at: new Date().toISOString(),
-      });
+      if (newPassword || confirmPassword) {
+        if (newPassword.length < 6) throw new Error('New password must be at least 6 characters.');
+        if (newPassword !== confirmPassword) throw new Error('New passwords do not match.');
+        if (!currentPassword) throw new Error('Enter your current password to change it.');
+        const { ok } = await verifyPassword(currentPassword);
+        if (!ok) throw new Error('Current password is incorrect.');
+        const { error: pwErr } = await supabase.auth.updateUser({ password: newPassword });
+        if (pwErr) throw pwErr;
+      }
 
+      // Email is the login identity, so it is not edited here.
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name: fullName, address, phone, updated_at: new Date().toISOString() })
+        .eq('id', user.id);
       if (error) throw error;
+
       setMsg({ text: `✅ ${role} profile saved successfully!`, isError: false });
     } catch (err) {
-      setMsg({ text: `✅ ${role} profile details updated!`, isError: false });
+      setMsg({ text: `❌ ${err.message}`, isError: true });
     } finally {
       setSaving(false);
       setCurrentPassword('');
@@ -2027,7 +2012,7 @@ function UserProfileSettingsView({ user, role }) {
             <h3 style={sectionHeadingStyle}>1. Personal & Contact Details</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '10px' }}>
               <div><label style={labelStyle}>Full Name</label><input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required style={inputStyle} /></div>
-              <div><label style={labelStyle}>Email Address</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} /></div>
+              <div><label style={labelStyle}>Email Address</label><input type="email" value={email} disabled title="Email is your login and cannot be changed here" style={{ ...inputStyle, backgroundColor: '#f1f5f9' }} /></div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
               <div><label style={labelStyle}>Address</label><input type="text" value={address} onChange={(e) => setAddress(e.target.value)} required style={inputStyle} /></div>

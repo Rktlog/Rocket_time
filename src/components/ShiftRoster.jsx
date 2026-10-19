@@ -7,14 +7,14 @@ export default function ShiftRoster({ user }) {
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Calculate start of week starting on THURSDAY
+  // Calculate start of week starting on FRIDAY
   function getStartOfWeek(d) {
     const date = new Date(d);
-    const day = date.getDay(); // Sunday = 0, Monday = 1, ..., Thursday = 4
-    const diff = date.getDate() - day + (day < 4 ? -3 : 4);
-    const thursday = new Date(date.setDate(diff));
-    thursday.setHours(0, 0, 0, 0);
-    return thursday;
+    const day = date.getDay(); // Sunday = 0, Monday = 1, ..., Friday = 5
+    const diff = date.getDate() - day + (day < 5 ? -2 : 5);
+    const friday = new Date(date.setDate(diff));
+    friday.setHours(0, 0, 0, 0);
+    return friday;
   }
 
   function formatLocalDate(d) {
@@ -83,7 +83,7 @@ export default function ShiftRoster({ user }) {
     return String(rawVal).slice(0, 5);
   };
 
-  const DAYS_OF_WEEK = ['Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday'];
+  const DAYS_OF_WEEK = ['Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
 
   return (
     <div>

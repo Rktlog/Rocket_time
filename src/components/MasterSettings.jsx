@@ -1,6 +1,7 @@
 // src/components/MasterSettings.jsx
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { verifyPassword } from '../lib/auth';
 
 export default function MasterSettings() {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -35,6 +36,11 @@ export default function MasterSettings() {
     setLoading(true);
 
     try {
+      const { ok } = await verifyPassword(currentPassword);
+      if (!ok) {
+        throw new Error('Current password is incorrect.');
+      }
+
       // Update password using Supabase Auth
       const { error } = await supabase.auth.updateUser({
         password: newPassword,

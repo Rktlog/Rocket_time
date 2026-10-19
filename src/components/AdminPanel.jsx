@@ -91,21 +91,8 @@ export default function AdminPanel({ onDataChange }) {
       }
     }
 
-    // Default Fallback Coordinates for Known Regions if API is blocked
-    const regionDefaults = {
-      campbellfield: { lat: -37.6698, lng: 144.9540 },
-      melbourne: { lat: -37.8136, lng: 144.9631 },
-      sydney: { lat: -33.8688, lng: 151.2093 },
-      brisbane: { lat: -27.4705, lng: 153.0260 }
-    };
-
-    const subKey = suburb.toLowerCase().trim();
-    if (regionDefaults[subKey]) {
-      return regionDefaults[subKey];
-    }
-
-    // Default fallback to Campbellfield coordinates
-    return { lat: -37.6698, lng: 144.9540 };
+    // Could not locate the address: return null so the caller can refuse to save wrong GPS data
+    return null;
   };
 
   // Add New Site (Prevents 409 Conflicts via Upsert)
@@ -116,7 +103,13 @@ export default function AdminPanel({ onDataChange }) {
     setMsg({ text: '📡 Geocoding location and saving site...', isError: false });
 
     const fullAddress = formatAddress(newStreet, newSuburb, newState, newPostcode);
-    const { lat, lng } = await geocodeAddress(newStreet, newSuburb, newState, newPostcode);
+    const coords = await geocodeAddress(newStreet, newSuburb, newState, newPostcode);
+    if (!coords) {
+      setMsg({ text: '❌ Could not find GPS coordinates for that address. Check the street, suburb and postcode.', isError: true });
+      setTimeout(() => setMsg({ text: '', isError: false }), 5000);
+      return;
+    }
+    const { lat, lng } = coords;
 
     try {
       const { error } = await supabase.from('sites').upsert([
@@ -166,7 +159,13 @@ export default function AdminPanel({ onDataChange }) {
     setMsg({ text: '📡 Updating GPS coordinates and site details...', isError: false });
 
     const fullAddress = formatAddress(editStreet, editSuburb, editState, editPostcode);
-    const { lat, lng } = await geocodeAddress(editStreet, editSuburb, editState, editPostcode);
+    const coords = await geocodeAddress(editStreet, editSuburb, editState, editPostcode);
+    if (!coords) {
+      setMsg({ text: '❌ Could not find GPS coordinates for that address. Check the street, suburb and postcode.', isError: true });
+      setTimeout(() => setMsg({ text: '', isError: false }), 5000);
+      return;
+    }
+    const { lat, lng } = coords;
 
     try {
       const { error } = await supabase

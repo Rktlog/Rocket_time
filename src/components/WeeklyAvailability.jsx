@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
-const DAYS = ['Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday'];
+const DAYS = ['Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
 
 export default function WeeklyAvailability({ user }) {
   const [currentWeekStart, setCurrentWeekStart] = useState(getStartOfWeek(new Date()));
@@ -18,14 +18,14 @@ export default function WeeklyAvailability({ user }) {
     return `${year}-${month}-${day}`;
   }
 
-  // Calculate start of week starting on THURSDAY
+  // Calculate start of week starting on FRIDAY
   function getStartOfWeek(d) {
     const date = new Date(d);
-    const day = date.getDay(); // Sunday = 0, Monday = 1, ..., Thursday = 4
-    const diff = date.getDate() - day + (day < 4 ? -3 : 4);
-    const thursday = new Date(date.setDate(diff));
-    thursday.setHours(0, 0, 0, 0);
-    return thursday;
+    const day = date.getDay(); // Sunday = 0, Monday = 1, ..., Friday = 5
+    const diff = date.getDate() - day + (day < 5 ? -2 : 5);
+    const friday = new Date(date.setDate(diff));
+    friday.setHours(0, 0, 0, 0);
+    return friday;
   }
 
   const changeWeek = (offset) => {

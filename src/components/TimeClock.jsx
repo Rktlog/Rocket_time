@@ -335,6 +335,22 @@ export default function TimeClock({ employee, scheduledShift }) {
           const { data: { user } } = await supabase.auth.getUser();
           const now = new Date();
 
+          // Block a second open shift (other tab or device)
+          const { data: openLog } = await supabase
+            .from('time_logs')
+            .select('id')
+            .eq('user_id', user?.id)
+            .is('clock_out', null)
+            .limit(1)
+            .maybeSingle();
+
+          if (openLog) {
+            setMsg({ text: '⚠️ You already have an open shift (maybe on another device). Loading it now.', isError: true });
+            await checkActiveShift();
+            setLoading(false);
+            return;
+          }
+
           const { data, error } = await supabase
             .from('time_logs')
             .insert([
