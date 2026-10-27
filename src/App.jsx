@@ -1254,8 +1254,17 @@ function ManagerStaffListView({ currentDepartment }) {
   const confirmRemoval = async () => {
     if (!userToRemove) return;
     try {
-      const { error } = await supabase.from('profiles').update({ department: 'Unassigned' }).eq('id', userToRemove.id);
+      // .select('id') returns the rows that actually changed. Supabase does NOT error when a
+      // row-level security rule blocks an update, it just changes 0 rows, so we check for that.
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ department: 'Unassigned' })
+        .eq('id', userToRemove.id)
+        .select('id');
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('The database blocked this change (permissions). Nothing was removed.');
+      }
       setDeptStaff(deptStaff.filter(u => u.id !== userToRemove.id));
       setMsg(`✅ Removed ${userToRemove.full_name || userToRemove.name} from roster.`);
     } catch (err) {
@@ -1276,7 +1285,7 @@ function ManagerStaffListView({ currentDepartment }) {
       <h2 style={viewHeadingStyle}>👥 Department Staff Roster</h2>
       <p style={subTextStyle}>View employees assigned under your department management.</p>
 
-      {msg && <div style={{ ...successBannerStyle, marginBottom: '14px' }}>{msg}</div>}
+      {msg && <div style={{ ...(msg.startsWith('❌') ? errorAlertStyle : successBannerStyle), marginBottom: '14px' }}>{msg}</div>}
 
       <div style={{ marginBottom: '14px', maxWidth: '400px' }}>
         <input
