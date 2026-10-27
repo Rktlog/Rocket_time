@@ -181,24 +181,27 @@ export default function App() {
     const targetSite = overrideSite || inviteSite;
     const email = inviteEmail.trim().toLowerCase();
 
-    const { error } = await supabase.from('invitations').insert([
-      {
-        full_name: inviteFullName,
+    // Creates the login + profile directly via the create-employee edge function.
+    // (Kept the handleSendInvite name so the props below don't need renaming.)
+    const { data, error } = await supabase.functions.invoke('create-employee', {
+      body: {
+        full_name: inviteFullName.trim(),
         email,
         department: targetDept,
         location: targetSite,
         employment_type: employmentType,
       },
-    ]);
+    });
 
-    if (error) {
-      setInviteSent({ ok: false, email, error: error.message });
+    if (error || !data?.ok) {
+      setInviteSent({ ok: false, email, error: data?.error || error?.message || 'Unknown error' });
+      setTimeout(() => setInviteSent(false), 8000);
     } else {
-      setInviteSent({ ok: true, email });
+      // Success banner stays until dismissed, because the temp password is only shown once.
+      setInviteSent({ ok: true, email, tempPassword: data.tempPassword });
       setInviteFullName('');
       setInviteEmail('');
     }
-    setTimeout(() => setInviteSent(false), 6000);
   };
 
   const handleLogout = async () => {
@@ -391,7 +394,7 @@ function AdminDashboard({
       <aside style={sidebarStyle}>
         <button onClick={() => setActiveTab('users')} style={navBtn(activeTab === 'users')}>👥 Users & Profiles</button>
         <button onClick={() => setActiveTab('sites')} style={navBtn(activeTab === 'sites')}>📍 Sites & Depts</button>
-        <button onClick={() => setActiveTab('invites')} style={navBtn(activeTab === 'invites')}>✉️ Send Invites</button>
+        <button onClick={() => setActiveTab('invites')} style={navBtn(activeTab === 'invites')}>➕ Add Employee</button>
         <button onClick={() => setActiveTab('payroll')} style={navBtn(activeTab === 'payroll')}>📊 Global Payroll</button>
         <button onClick={() => setActiveTab('reports')} style={navBtn(activeTab === 'reports')}>📧 Reports</button>
         <button onClick={() => setActiveTab('system')} style={navBtn(activeTab === 'system')}>⚙️ Settings</button>
@@ -403,8 +406,8 @@ function AdminDashboard({
 
         {activeTab === 'invites' && (
           <div>
-            <h2 style={viewHeadingStyle}>✉️ Send Employee Invitation</h2>
-            <p style={subTextStyle}>Send an onboarding invitation specifying department, site, and employment type.</p>
+            <h2 style={viewHeadingStyle}>➕ Add Employee</h2>
+            <p style={subTextStyle}>Create an employee profile directly with department, site, and employment type. No invite needed.</p>
             <div style={{ ...cardStyle, maxWidth: '500px' }}>
               <form onSubmit={handleSendInvite}>
                 <label style={labelStyle}>Employee Full Name</label>
@@ -429,9 +432,16 @@ function AdminDashboard({
                   <option value="Part Time">⏱️ Part Time</option>
                   <option value="Casual">📅 Casual</option>
                 </select>
-                <button type="submit" style={btnStyle('#2563eb')}>Send Invite Link 🚀</button>
+                <button type="submit" style={btnStyle('#2563eb')}>Create Profile ✅</button>
               </form>
-              {inviteSent && <div style={inviteSent.ok ? successBannerStyle : errorAlertStyle}>{inviteSent.ok ? `✅ Invite saved for ${inviteSent.email}. No email goes out automatically, so send them the sign-up link yourself.` : `❌ Invite failed: ${inviteSent.error}`}</div>}
+              {inviteSent && <div style={inviteSent.ok ? successBannerStyle : errorAlertStyle}>{inviteSent.ok ? (
+                <div>
+                  ✅ Profile created for <strong>{inviteSent.email}</strong>.<br />
+                  Temporary password: <code style={{ fontWeight: 'bold', userSelect: 'all' }}>{inviteSent.tempPassword}</code><br />
+                  Give this to them now. It will not be shown again. They finish setup when they first sign in.
+                  <div><button type="button" onClick={() => setInviteSent(false)} style={{ marginTop: '8px', cursor: 'pointer' }}>Done</button></div>
+                </div>
+              ) : `❌ Could not create profile: ${inviteSent.error}`}</div>}
             </div>
           </div>
         )}
@@ -471,7 +481,7 @@ function ManagerDashboard({
         <button onClick={() => setActiveTab('users')} style={navBtn(activeTab === 'users')}>👥 Staff</button>
         <button onClick={() => setActiveTab('availability')} style={navBtn(activeTab === 'availability')}>⏱️ Availability</button>
         <button onClick={() => setActiveTab('rostering')} style={navBtn(activeTab === 'rostering')}>📅 Rostering</button>
-        <button onClick={() => setActiveTab('invites')} style={navBtn(activeTab === 'invites')}>✉️ Invites</button>
+        <button onClick={() => setActiveTab('invites')} style={navBtn(activeTab === 'invites')}>➕ Add Employee</button>
         <button onClick={() => setActiveTab('logs')} style={navBtn(activeTab === 'logs')}>🏢 Logs</button>
         <button onClick={() => setActiveTab('settings')} style={navBtn(activeTab === 'settings')}>⚙️ Settings</button>
       </aside>
@@ -485,9 +495,9 @@ function ManagerDashboard({
 
         {activeTab === 'invites' && (
           <div>
-            <h2 style={viewHeadingStyle}>✉️ Onboarding Invites</h2>
+            <h2 style={viewHeadingStyle}>➕ Add Employee</h2>
             <p style={subTextStyle}>
-              Send onboarding registration links. Invited staff will automatically be assigned to <strong>{currentUser.department}</strong> at <strong>{currentUser.location}</strong>.
+              Create employee profiles directly. New staff are automatically assigned to <strong>{currentUser.department}</strong> at <strong>{currentUser.location}</strong>.
             </p>
             <div style={{ ...cardStyle, maxWidth: '500px' }}>
               <form onSubmit={(e) => handleSendInvite(e, currentUser.department, currentUser.location)}>
@@ -520,9 +530,16 @@ function ManagerDashboard({
                   <option value="Casual">📅 Casual</option>
                 </select>
 
-                <button type="submit" style={btnStyle('#0f172a')}>Send Invite Link 🚀</button>
+                <button type="submit" style={btnStyle('#0f172a')}>Create Profile ✅</button>
               </form>
-              {inviteSent && <div style={{ ...(inviteSent.ok ? successBannerStyle : errorAlertStyle), marginTop: '16px' }}>{inviteSent.ok ? `✅ Invite saved for ${inviteSent.email}. No email goes out automatically, so send them the sign-up link yourself.` : `❌ Invite failed: ${inviteSent.error}`}</div>}
+              {inviteSent && <div style={{ ...(inviteSent.ok ? successBannerStyle : errorAlertStyle), marginTop: '16px' }}>{inviteSent.ok ? (
+                <div>
+                  ✅ Profile created for <strong>{inviteSent.email}</strong>.<br />
+                  Temporary password: <code style={{ fontWeight: 'bold', userSelect: 'all' }}>{inviteSent.tempPassword}</code><br />
+                  Give this to them now. It will not be shown again. They finish setup when they first sign in.
+                  <div><button type="button" onClick={() => setInviteSent(false)} style={{ marginTop: '8px', cursor: 'pointer' }}>Done</button></div>
+                </div>
+              ) : `❌ Could not create profile: ${inviteSent.error}`}</div>}
             </div>
           </div>
         )}
