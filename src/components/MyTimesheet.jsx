@@ -1,21 +1,13 @@
 // src/components/MyTimesheet.jsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { getStartOfWeek } from '../lib/dates';
 
 export default function MyTimesheet({ user }) {
   const [currentWeekStart, setCurrentWeekStart] = useState(getStartOfWeek(new Date()));
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Calculate start of week starting on FRIDAY
-  function getStartOfWeek(d) {
-    const date = new Date(d);
-    const day = date.getDay(); // Sunday = 0, Monday = 1, ..., Friday = 5
-    const diff = date.getDate() - day + (day < 5 ? -2 : 5);
-    const friday = new Date(date.setDate(diff));
-    friday.setHours(0, 0, 0, 0);
-    return friday;
-  }
 
   const changeWeek = (offset) => {
     const newDate = new Date(currentWeekStart);

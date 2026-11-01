@@ -1,152 +1,237 @@
 // src/components/PendingOffersView.jsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { expectRows } from '../lib/db';
 
 export default function PendingOffersView({ user }) {
-  const [offers, setOffers] = useState([]);
+  const [shiftOffers, setShiftOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState({ text: '', isError: false });
 
+  const formatDayAndDate = (dateStr) => {
+    if (!dateStr) return { dayName: 'Scheduled Day', formattedDate: '' };
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const dateObj = new Date(year, month - 1, day);
+
+    const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+    const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    return { dayName, formattedDate };
+  };
+
   useEffect(() => {
-    fetchShiftOffers();
+    let isMounted = true;
+    
+    const timer = setTimeout(() => {
+      if (isMounted) setLoading(false);
+    }, 3000);
+
+    fetchShiftOffers().finally(() => {
+      if (isMounted) setLoading(false);
+    });
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, [user]);
 
-  // Fetch offers matching the employee's email or user ID
   const fetchShiftOffers = async () => {
-    if (!user?.email && !user?.id) return;
-    setLoading(true);
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const cleanEmail = (user.email || '').trim().toLowerCase();
 
     try {
-      // 1. Check shift_offers table
-      const { data: directOffers, error: offerErr } = await supabase
+      const { data: offersData, error: offersErr } = await supabase
         .from('shift_offers')
         .select('*')
-        .or(`employee_email.eq.${user.email},employee_id.eq.${user.id}`)
+        .or(`employee_email.eq.${cleanEmail},employee_id.eq.${user.id}`)
         .eq('status', 'Pending');
 
-      // 2. Check shifts table
-      const { data: shiftTableOffers, error: shiftErr } = await supabase
+      if (offersErr) console.warn('shift_offers fetch warning:', offersErr.message);
+
+      const { data: shiftsData, error: shiftsErr } = await supabase
         .from('shifts')
         .select('*')
-        .eq('offered_to_email', user.email)
-        .eq('status', 'Offered');
+        .eq('user_id', user.id)
+        .eq('status', 'Pending');
 
-      let combined = [];
+      if (shiftsErr) console.warn('shifts fetch warning:', shiftsErr.message);
 
-      if (directOffers) {
-        combined = [...combined, ...directOffers.map(o => ({ ...o, source: 'shift_offers' }))];
-      }
-      if (shiftTableOffers) {
-        combined = [...combined, ...shiftTableOffers.map(s => ({ ...s, source: 'shifts' }))];
-      }
+      const combined = [
+        ...(offersData || []).map(o => ({ ...o, source: 'shift_offers' })),
+        ...(shiftsData || []).map(s => ({ ...s, source: 'shifts' }))
+      ];
 
-      setOffers(combined);
+      setShiftOffers(combined);
     } catch (err) {
-      console.error('Error loading shift offers:', err);
+      console.error('Error fetching shift offers:', err);
+      setShiftOffers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Accept Shift Action
   const handleAccept = async (offer) => {
     try {
-      if (offer.source === 'shift_offers') {
-        const { error } = await supabase
-          .from('shift_offers')
-          .update({ status: 'Accepted' })
-          .eq('id', offer.id);
-        if (error) throw error;
+      if (offer.source === 'shifts') {
+        // Already a roster row: just confirm it.
+        await expectRows(supabase.from('shifts').update({ status: 'Accepted' }).eq('id', offer.id), 'accept the shift');
       } else {
-        const { error } = await supabase
+        const targetDate = offer.shift_date;
+        if (!targetDate) throw new Error('This offer has no date.');
+        const cleanEmail = (user.email || '').trim().toLowerCase();
+
+        const parts = String(offer.shift_time || '08:30 - 16:30').split('-').map((p) => p.trim());
+        const toSec = (t) => (t.length === 5 ? `${t}:00` : t);
+        const startIso = new Date(`${targetDate}T${toSec(parts[0] || '08:30')}`).toISOString();
+        const endIso = new Date(`${targetDate}T${toSec(parts[1] || '16:30')}`).toISOString();
+
+        // Create the shift first, so a failure never leaves an Accepted offer with no shift.
+        await expectRows(supabase
           .from('shifts')
-          .update({ status: 'Assigned', assigned_to: user.id })
-          .eq('id', offer.id);
-        if (error) throw error;
+          .upsert(
+            [
+              {
+                user_id: user.id,
+                employee_name: user.name || 'Employee',
+                offered_to_email: cleanEmail,
+                department: user.department || 'Unassigned',
+                location: offer.location || user.location || null,
+                shift_date: targetDate,
+                start_time: startIso,
+                end_time: endIso,
+                status: 'Accepted',
+              },
+            ],
+            { onConflict: 'user_id,shift_date' }
+          ), 'create your shift');
+
+        await expectRows(
+          supabase.from('shift_offers').update({ status: 'Accepted' }).eq('id', offer.id),
+          'mark the offer as accepted'
+        );
       }
 
-      setMsg({ text: '✅ Shift accepted! Added to your active roster.', isError: false });
-      fetchShiftOffers(); // Refresh list
+      setShiftOffers((prev) => prev.filter((o) => !(o.id === offer.id && o.source === offer.source)));
+      setMsg({ text: '✅ Shift accepted! It is now live on your roster.', isError: false });
     } catch (err) {
+      console.error('Accept offer error:', err);
       setMsg({ text: `❌ Failed to accept shift: ${err.message}`, isError: true });
     }
   };
 
-  // Decline Shift Action
   const handleDecline = async (offer) => {
     try {
       if (offer.source === 'shift_offers') {
-        await supabase
-          .from('shift_offers')
-          .update({ status: 'Declined' })
-          .eq('id', offer.id);
+        await expectRows(
+          supabase.from('shift_offers').update({ status: 'Declined' }).eq('id', offer.id),
+          'decline the offer'
+        );
       } else {
-        await supabase
-          .from('shifts')
-          .update({ status: 'Declined' })
-          .eq('id', offer.id);
+        await expectRows(
+          supabase.from('shifts').update({ status: 'Declined' }).eq('id', offer.id),
+          'decline the shift'
+        );
       }
 
-      setMsg({ text: '❌ Shift offer declined.', isError: false });
-      fetchShiftOffers(); // Refresh list
+      setShiftOffers(prev => prev.filter(o => !(o.id === offer.id && o.source === offer.source)));
+      setMsg({ text: '🚫 Shift offer declined.', isError: false });
     } catch (err) {
+      console.error('Decline offer error:', err);
       setMsg({ text: `❌ Failed to decline shift: ${err.message}`, isError: true });
     }
   };
 
+  if (loading) {
+    return (
+      <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+        <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 'bold' }}>⌛ Checking shift offers...</div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ marginBottom: '24px' }}>
-      <h2>📬 Pending Shift Offers</h2>
-      <p style={{ color: '#64748b', fontSize: '14px', margin: '0 0 20px 0' }}>
-        Review and accept shift offers dispatched by your management team.
-      </p>
+    <div style={{ backgroundColor: '#ffffff', padding: '14px', borderRadius: '14px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+        <div>
+          <h3 style={{ margin: 0, fontSize: '16px', color: '#0f172a' }}>📬 Pending Shift Offers</h3>
+          <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#64748b' }}>
+            Review and accept open shifts offered by your manager.
+          </p>
+        </div>
+        <span style={{ backgroundColor: '#eff6ff', color: '#2563eb', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>
+          {shiftOffers.length} {shiftOffers.length === 1 ? 'Available' : 'Available'}
+        </span>
+      </div>
 
       {msg.text && (
         <div style={{
-          padding: '12px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', marginBottom: '16px',
-          backgroundColor: msg.isError ? '#fef2f2' : '#f0fdf4',
-          color: msg.isError ? '#991b1b' : '#15803d',
+          padding: '10px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', marginBottom: '14px',
+          backgroundColor: msg.isError ? '#fef2f2' : '#f0fdf4', color: msg.isError ? '#991b1b' : '#15803d',
           border: `1px solid ${msg.isError ? '#fca5a5' : '#bbf7d0'}`
         }}>
           {msg.text}
         </div>
       )}
 
-      {loading ? (
-        <div style={cardStyle}>Checking for new shift offers...</div>
-      ) : offers.length === 0 ? (
-        <div style={cardStyle}>
-          <div style={{ color: '#64748b', fontSize: '14px' }}>
-            🎉 You have no pending shift offers right now. Check back later!
-          </div>
+      {shiftOffers.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '24px 12px', border: '1px dashed #cbd5e1', borderRadius: '12px', backgroundColor: '#f8fafc' }}>
+          <div style={{ fontSize: '28px', marginBottom: '6px' }}>☕</div>
+          <h4 style={{ margin: 0, color: '#334155', fontSize: '14px' }}>No Pending Shift Offers</h4>
+          <p style={{ margin: '2px 0 0 0', color: '#94a3b8', fontSize: '11px' }}>
+            You're all caught up! New shift invitations will appear here automatically.
+          </p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {offers.map((item) => {
-            const title = item.title || `${item.day || 'Scheduled'} Shift`;
-            const timing = item.shift_time || (item.start_time ? `${new Date(item.start_time).toLocaleDateString()} (${new Date(item.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(item.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})` : '08:30 AM - 04:30 PM');
-            const loc = item.location || 'Campbellfield Site';
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
+          {shiftOffers.map((offer) => {
+            const rawDate = offer.shift_date || offer.date;
+            const { dayName, formattedDate } = formatDayAndDate(rawDate);
 
             return (
-              <div key={item.id} style={offerCardStyle}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div key={offer.id} style={{ backgroundColor: '#ffffff', padding: '14px', borderRadius: '12px', border: '2px solid #3b82f6', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                   <div>
-                    <span style={badgeStyle}>NEW OFFER</span>
-                    <h3 style={{ margin: '8px 0 4px 0', fontSize: '16px', color: '#0f172a' }}>{title}</h3>
-                    <div style={{ fontSize: '13px', color: '#475569', display: 'flex', gap: '16px', marginTop: '6px' }}>
-                      <span>📍 <strong>Location:</strong> {loc}</span>
-                      <span>⏰ <strong>Shift:</strong> {timing}</span>
+                    <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#0f172a' }}>
+                      📅 {dayName}
+                    </div>
+                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
+                      {formattedDate || rawDate}
                     </div>
                   </div>
+                  <span style={{ padding: '3px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 'bold', backgroundColor: '#dbeafe', color: '#1e40af' }}>
+                    PENDING
+                  </span>
+                </div>
 
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => handleAccept(item)} style={acceptBtnStyle}>
-                      ✓ Accept Shift
-                    </button>
-                    <button onClick={() => handleDecline(item)} style={declineBtnStyle}>
-                      ✕ Decline
-                    </button>
+                <div style={{ backgroundColor: '#f8fafc', padding: '8px 10px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '10px' }}>
+                  <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Hours</div>
+                  <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#2563eb', marginTop: '2px' }}>
+                    ⏰ {offer.shift_time || '08:30 - 16:30'}
                   </div>
+                </div>
+
+                <div style={{ fontSize: '11px', color: '#475569', marginBottom: '12px', wordBreak: 'break-word' }}>
+                  📍 <strong>Location:</strong> {offer.location || user.location || 'Not set'}
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => handleAccept(offer)}
+                    style={{ flex: 1, padding: '8px', backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
+                  >
+                    ✓ Accept
+                  </button>
+                  <button
+                    onClick={() => handleDecline(offer)}
+                    style={{ flex: 1, padding: '8px', backgroundColor: '#ffffff', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
+                  >
+                    ✕ Decline
+                  </button>
                 </div>
               </div>
             );
@@ -156,10 +241,3 @@ export default function PendingOffersView({ user }) {
     </div>
   );
 }
-
-// Styling Constants
-const cardStyle = { backgroundColor: '#ffffff', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0' };
-const offerCardStyle = { backgroundColor: '#ffffff', padding: '18px 20px', borderRadius: '12px', border: '2px solid #bfdbfe', boxShadow: '0 2px 4px rgba(37,99,235,0.05)' };
-const badgeStyle = { backgroundColor: '#dbeafe', color: '#1e40af', padding: '3px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' };
-const acceptBtnStyle = { backgroundColor: '#16a34a', color: '#ffffff', border: 'none', padding: '10px 18px', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' };
-const declineBtnStyle = { backgroundColor: '#f1f5f9', color: '#dc2626', border: '1px solid #fca5a5', padding: '10px 16px', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' };

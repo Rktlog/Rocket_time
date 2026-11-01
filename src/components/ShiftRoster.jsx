@@ -1,28 +1,14 @@
 // src/components/ShiftRoster.jsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { formatLocalDate, getStartOfWeek } from '../lib/dates';
 
 export default function ShiftRoster({ user }) {
   const [currentWeekStart, setCurrentWeekStart] = useState(getStartOfWeek(new Date()));
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Calculate start of week starting on FRIDAY
-  function getStartOfWeek(d) {
-    const date = new Date(d);
-    const day = date.getDay(); // Sunday = 0, Monday = 1, ..., Friday = 5
-    const diff = date.getDate() - day + (day < 5 ? -2 : 5);
-    const friday = new Date(date.setDate(diff));
-    friday.setHours(0, 0, 0, 0);
-    return friday;
-  }
 
-  function formatLocalDate(d) {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
 
   const changeWeek = (offset) => {
     const newDate = new Date(currentWeekStart);
@@ -149,7 +135,7 @@ export default function ShiftRoster({ user }) {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#475569', marginTop: '12px' }}>
-                  <span>📍 <strong>Site Location:</strong> Englite Campbellfield</span>
+                  <span>📍 <strong>Site Location:</strong> {dayShift.location || user?.location || 'Site not set'}</span>
                 </div>
               </div>
             );

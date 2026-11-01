@@ -1,6 +1,7 @@
 // src/components/AdminPanel.jsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { expectRows } from '../lib/db';
 
 export default function AdminPanel({ onDataChange }) {
   const [sites, setSites] = useState([]);
@@ -112,15 +113,13 @@ export default function AdminPanel({ onDataChange }) {
     const { lat, lng } = coords;
 
     try {
-      const { error } = await supabase.from('sites').upsert([
+      const { error } = await supabase.from('sites').insert([
         { 
           name: newSiteName.trim(), 
           address: fullAddress,
           department: newAssignedDept,
-          lat: lat,
-          lng: lng,
-          latitude: lat,
-          longitude: lng,
+          lat,
+          lng,
           radius_km: 5.0
         }
       ]);
@@ -168,21 +167,17 @@ export default function AdminPanel({ onDataChange }) {
     const { lat, lng } = coords;
 
     try {
-      const { error } = await supabase
+      await expectRows(supabase
         .from('sites')
         .update({ 
           name: editSiteName.trim(), 
           address: fullAddress,
           department: editAssignedDept,
-          lat: lat,
-          lng: lng,
-          latitude: lat,
-          longitude: lng,
+          lat,
+          lng,
           radius_km: 5.0
         })
-        .eq('id', editingSiteId);
-
-      if (error) throw error;
+        .eq('id', editingSiteId), 'update the site');
 
       setMsg({ text: '✅ Site details and GPS updated successfully!', isError: false });
       setEditingSiteId(null);
@@ -198,8 +193,7 @@ export default function AdminPanel({ onDataChange }) {
     if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
 
     try {
-      const { error } = await supabase.from('sites').delete().eq('id', id);
-      if (error) throw error;
+      await expectRows(supabase.from('sites').delete().eq('id', id), 'delete the site');
 
       setMsg({ text: `✅ Site "${name}" removed.`, isError: false });
       fetchSitesAndDepts();

@@ -1,6 +1,8 @@
 // src/components/TimeClock.jsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { expectRows } from '../lib/db';
+import { calculatePaidHours } from '../lib/hours';
 
 export default function TimeClock({ employee, scheduledShift }) {
   const [isClockedIn, setIsClockedIn] = useState(false);
@@ -46,28 +48,15 @@ export default function TimeClock({ employee, scheduledShift }) {
       const { data: siteData, error } = await supabase
         .from('sites')
         .select('*')
-        .ilike('name', `%${siteName.trim()}%`)
+        .ilike('name', siteName.trim())
         .maybeSingle();
 
       if (error) console.warn('Site lookup query warning:', error.message);
 
-      let resolvedLat = siteData?.lat ?? siteData?.latitude ?? siteData?.site_lat;
-      let resolvedLng = siteData?.lng ?? siteData?.longitude ?? siteData?.site_lng;
-      let radiusKm = parseFloat(siteData?.radius_km || siteData?.max_distance_km || 5.0);
-      let siteDept = siteData?.department || employee?.department || 'General';
-
-      if (!resolvedLat || !resolvedLng) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('site_lat, site_lng')
-          .eq('id', employee?.id || '')
-          .maybeSingle();
-
-        if (profileData?.site_lat && profileData?.site_lng) {
-          resolvedLat = profileData.site_lat;
-          resolvedLng = profileData.site_lng;
-        }
-      }
+      const resolvedLat = siteData?.lat;
+      const resolvedLng = siteData?.lng;
+      const radiusKm = parseFloat(siteData?.radius_km || 5.0);
+      const siteDept = siteData?.department || employee?.department || 'General';
 
       if (resolvedLat && resolvedLng) {
         setAllocatedSite({
@@ -131,17 +120,20 @@ export default function TimeClock({ employee, scheduledShift }) {
             data.container_type || 'none'
           );
 
-          await supabase
-            .from('time_logs')
-            .update({
-              clock_out: autoClockOutTime.toISOString(),
-              total_hours: parseFloat(paidHours),
-              status: 'Auto Clocked Out (System)'
-            })
-            .eq('id', data.id);
+          await expectRows(
+            supabase
+              .from('time_logs')
+              .update({
+                clock_out: autoClockOutTime.toISOString(),
+                total_hours: parseFloat(paidHours),
+                status: 'Auto Clocked Out (System)'
+              })
+              .eq('id', data.id),
+            'close the previous shift'
+          );
 
           setMsg({
-            text: `⚠️ Previous shift forgot to clock out! Automatically closed at 8:00 PM.`,
+            text: `⚠️ Previous shift forgot to clock out! Automatically closed at 8:00 PM. Your manager will review it.`,
             isError: false,
           });
 
@@ -196,16 +188,19 @@ export default function TimeClock({ employee, scheduledShift }) {
 
     try {
       if (activeLogId) {
-        await supabase
-          .from('time_logs')
-          .update({
-            clock_out: eightPmCutoff.toISOString(),
-            no_break: hasNoBreak,
-            container_type: containerType,
-            total_hours: parseFloat(paidHours),
-            status: 'Auto Clocked Out (System)'
-          })
-          .eq('id', activeLogId);
+        await expectRows(
+          supabase
+            .from('time_logs')
+            .update({
+              clock_out: eightPmCutoff.toISOString(),
+              no_break: hasNoBreak,
+              container_type: containerType,
+              total_hours: parseFloat(paidHours),
+              status: 'Auto Clocked Out (System)'
+            })
+            .eq('id', activeLogId),
+          'close your shift at the 8 PM cutoff'
+        );
       }
 
       setMsg({
@@ -254,24 +249,6 @@ export default function TimeClock({ employee, scheduledShift }) {
       return new Date(scheduledDate);
     }
     return actualDate;
-  };
-
-  const calculatePaidHours = (adjustedIn, adjustedOut, noBreakWorked, container) => {
-    const totalMs = adjustedOut.getTime() - adjustedIn.getTime();
-    const rawHours = totalMs / (1000 * 60 * 60);
-
-    let calculatedPaidHours = 0;
-
-    if (!noBreakWorked) {
-      calculatedPaidHours = Math.max(0, rawHours - 0.50);
-    } else {
-      calculatedPaidHours = rawHours + (40 / 60);
-    }
-
-    if (container === '20ft') calculatedPaidHours += (10 / 60);
-    if (container === '40ft') calculatedPaidHours += (20 / 60);
-
-    return calculatedPaidHours.toFixed(2);
   };
 
   // 3. Clock In with Strict GPS Check
@@ -419,21 +396,22 @@ export default function TimeClock({ employee, scheduledShift }) {
 
     try {
       if (activeLogId) {
-        const { error } = await supabase
-          .from('time_logs')
-          .update({
-            clock_in: adjustedClockIn.toISOString(),
-            clock_out: adjustedClockOut.toISOString(),
-            no_break: hasNoBreak,
-            container_type: containerType,
-            total_hours: parseFloat(finalPaidHours),
-          })
-          .eq('id', activeLogId);
-
-        if (error) throw error;
+        await expectRows(
+          supabase
+            .from('time_logs')
+            .update({
+              clock_in: adjustedClockIn.toISOString(),
+              clock_out: adjustedClockOut.toISOString(),
+              no_break: hasNoBreak,
+              container_type: containerType,
+              total_hours: parseFloat(finalPaidHours),
+            })
+            .eq('id', activeLogId),
+          'save your clock-out'
+        );
       } else {
         const { data: { user } } = await supabase.auth.getUser();
-        await supabase.from('time_logs').insert([
+        const { error: insertErr } = await supabase.from('time_logs').insert([
           {
             user_id: user?.id,
             employee_name: employee?.name || 'Employee',
@@ -447,6 +425,7 @@ export default function TimeClock({ employee, scheduledShift }) {
             status: 'Pending Review',
           },
         ]);
+        if (insertErr) throw insertErr;
       }
 
       setMsg({

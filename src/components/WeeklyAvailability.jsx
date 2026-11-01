@@ -1,6 +1,8 @@
 // src/components/WeeklyAvailability.jsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { expectRows } from '../lib/db';
+import { formatLocalDate, getStartOfWeek } from '../lib/dates';
 
 const DAYS = ['Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
 
@@ -11,22 +13,7 @@ export default function WeeklyAvailability({ user }) {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState({ text: '', isError: false });
 
-  function formatLocalDate(d) {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
 
-  // Calculate start of week starting on FRIDAY
-  function getStartOfWeek(d) {
-    const date = new Date(d);
-    const day = date.getDay(); // Sunday = 0, Monday = 1, ..., Friday = 5
-    const diff = date.getDate() - day + (day < 5 ? -2 : 5);
-    const friday = new Date(date.setDate(diff));
-    friday.setHours(0, 0, 0, 0);
-    return friday;
-  }
 
   const changeWeek = (offset) => {
     const newDate = new Date(currentWeekStart);
@@ -147,11 +134,11 @@ export default function WeeklyAvailability({ user }) {
         };
       });
 
-      const { error } = await supabase
-        .from('weekly_availability')
-        .upsert(recordsToUpsert, { onConflict: 'user_id, day, week_start' });
-
-      if (error) throw error;
+      await expectRows(
+        supabase.from('weekly_availability').upsert(recordsToUpsert, { onConflict: 'user_id,day,week_start' }),
+        'save your availability',
+        recordsToUpsert.length
+      );
       setMsg({ text: '💾 Availability saved successfully!', isError: false });
     } catch (err) {
       console.error(err);

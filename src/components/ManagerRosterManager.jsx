@@ -1,6 +1,8 @@
 // src/components/ManagerRosterManager.jsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { expectRows } from '../lib/db';
+import { formatLocalDate, getStartOfWeek } from '../lib/dates';
 
 const DAYS_OF_WEEK = ['Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
 
@@ -18,23 +20,7 @@ export default function ManagerRosterManager({ department }) {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState({ text: '', isError: false });
 
-  // Safe local YYYY-MM-DD formatter (Prevents timezone offset bugs)
-  function formatLocalDate(d) {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
 
-  // Calculate start of week starting on FRIDAY
-  function getStartOfWeek(d) {
-    const date = new Date(d);
-    const day = date.getDay(); // Sunday = 0, Monday = 1, ..., Friday = 5
-    const diff = date.getDate() - day + (day < 5 ? -2 : 5);
-    const friday = new Date(date.setDate(diff));
-    friday.setHours(0, 0, 0, 0);
-    return friday;
-  }
 
   const changeWeek = (offset) => {
     if (hasUnsavedChanges) {
@@ -63,9 +49,9 @@ export default function ManagerRosterManager({ department }) {
 
     try {
       // 1. Fetch Staff Members
-      let staffQuery = supabase.from('profiles').select('id, full_name, email, department').neq('role', 'admin');
+      let staffQuery = supabase.from('profiles').select('id, full_name, email, department, location').neq('role', 'admin').eq('active', true);
       if (department && department !== 'All Departments') {
-        staffQuery = staffQuery.or(`department.ilike.%${department.trim()}%,department.is.null`);
+        staffQuery = staffQuery.or(`department.ilike.${department.trim()},department.is.null`);
       }
       const { data: staffData } = await staffQuery;
       setStaffRoster(staffData || []);
@@ -219,9 +205,10 @@ export default function ManagerRosterManager({ department }) {
 
             recordsMap.set(compositeKey, {
               user_id: userId,
-              employee_name: staffObj?.full_name || staffObj?.name || 'Employee',
+              employee_name: staffObj?.full_name || 'Employee',
               offered_to_email: staffObj?.email || '',
-              department: staffObj?.department || department || 'englite',
+              department: staffObj?.department || department || 'Unassigned',
+              ...(staffObj?.location ? { location: staffObj.location } : {}),
               shift_date: dateStr,
               start_time: startIso,
               end_time: endIso,
@@ -242,17 +229,16 @@ export default function ManagerRosterManager({ department }) {
 
       // 1. Save active shifts first (a failure here changes nothing)
       if (recordsToUpsert.length > 0) {
-        const { error: upsertErr } = await supabase
-          .from('shifts')
-          .upsert(recordsToUpsert, { onConflict: 'user_id,shift_date' });
-
-        if (upsertErr) throw upsertErr;
+        await expectRows(
+          supabase.from('shifts').upsert(recordsToUpsert, { onConflict: 'user_id,shift_date' }),
+          'publish the roster',
+          recordsToUpsert.length
+        );
       }
 
       // 2. Then remove only the shifts the manager unassigned
       if (removeIds.length > 0) {
-        const { error: deleteErr } = await supabase.from('shifts').delete().in('id', removeIds);
-        if (deleteErr) throw deleteErr;
+        await expectRows(supabase.from('shifts').delete().in('id', removeIds), 'remove unassigned shifts', removeIds.length);
       }
 
       setMsg({ text: '✅ Roster saved and published for this week!', isError: false });
@@ -270,8 +256,7 @@ export default function ManagerRosterManager({ department }) {
   // DELETE PUBLISHED SHIFT
   const handleDeletePublishedShift = async (shift) => {
     try {
-      const { error } = await supabase.from('shifts').delete().eq('id', shift.id);
-      if (error) throw error;
+      await expectRows(supabase.from('shifts').delete().eq('id', shift.id), 'remove the shift');
 
       // Instantly purge key from draft state & approved view
       const draftKey = `${shift.user_id}_${shift.shift_date}`;
@@ -419,7 +404,7 @@ export default function ManagerRosterManager({ department }) {
                                     {s.employee_name || 'Employee'}
                                   </div>
                                   <div style={{ fontSize: '10px', color: '#64748b' }}>
-                                    📍 Englite Campbellfield
+                                    📍 {s.location || 'Site not set'}
                                   </div>
                                 </div>
                               </div>
@@ -481,7 +466,7 @@ export default function ManagerRosterManager({ department }) {
                   {staffList.map((staff) => (
                     <tr key={staff.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                       <td style={{ padding: '8px', fontWeight: 'bold', color: '#0f172a', wordBreak: 'break-word' }}>
-                        {staff.full_name || staff.name || 'Unnamed'}
+                        {staff.full_name || 'Unnamed'}
                       </td>
 
                       {DAYS_OF_WEEK.map((dayName, idx) => {

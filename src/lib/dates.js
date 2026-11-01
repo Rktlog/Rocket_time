@@ -17,3 +17,15 @@ export function getStartOfWeek(d) {
   friday.setHours(0, 0, 0, 0);
   return friday;
 }
+
+/** Today as local YYYY-MM-DD. */
+export function todayLocal() {
+  return formatLocalDate(new Date());
+}
+
+/** 'YYYY-MM-DD' to a friendly "Fri 30 Oct" without any timezone shift. */
+export function prettyDate(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = String(dateStr).split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+}
