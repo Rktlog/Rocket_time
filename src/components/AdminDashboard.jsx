@@ -1,7 +1,7 @@
 // src/components/AdminDashboard.jsx
 import React, { useState, useEffect } from 'react';
-import { dashboardGrid, sidebarStyle, panelStyle, navBtn } from '../lib/styles';
 import { countPendingApprovals } from '../lib/pending';
+import Shell from './Shell';
 import AdminUserRoleManagementView from './AdminUserRoleManagementView';
 import AdminPanel from './AdminPanel';
 import AddEmployeeForm from './AddEmployeeForm';
@@ -10,39 +10,33 @@ import DepartmentTimeLogsView from './DepartmentTimeLogsView';
 import AdminReportSchedulerView from './AdminReportSchedulerView';
 import MasterSettings from './MasterSettings';
 
-export default function AdminDashboard({ currentUser, departments, sites, refreshData }) {
-  const [activeTab, setActiveTab] = useState('users');
+export default function AdminDashboard({ currentUser, departments, sites, refreshData, onLogout }) {
+  const [activeTab, setActiveTab] = useState('timesheets');
   const [pending, setPending] = useState(0);
 
   useEffect(() => {
     countPendingApprovals('All Departments').then(setPending).catch(() => {});
   }, [activeTab]);
 
-  const tab = (id, label) => (
-    <button onClick={() => setActiveTab(id)} style={navBtn(activeTab === id)}>{label}</button>
-  );
+  const items = [
+    { id: 'timesheets', label: 'All timesheets', icon: 'file', group: 'Review', primary: true },
+    { id: 'approvals', label: 'Approvals', icon: 'check', group: 'Review', badge: pending || null, primary: true },
+    { id: 'users', label: 'People', icon: 'users', group: 'People', primary: true },
+    { id: 'add', label: 'Add employee', icon: 'userPlus', group: 'People', primary: true },
+    { id: 'sites', label: 'Sites and departments', icon: 'pin', group: 'Setup' },
+    { id: 'reports', label: 'Reports', icon: 'mail', group: 'Setup' },
+    { id: 'system', label: 'Settings', icon: 'sliders', group: 'Setup' },
+  ];
 
   return (
-    <div style={dashboardGrid}>
-      <aside style={sidebarStyle}>
-        {tab('users', '👥 Users & Profiles')}
-        {tab('sites', '📍 Sites & Depts')}
-        {tab('add', '➕ Add Employee')}
-        {tab('approvals', `✅ Approvals${pending ? ` (${pending})` : ''}`)}
-        {tab('timesheets', '🕒 All Timesheets')}
-        {tab('reports', '📧 Reports')}
-        {tab('system', '⚙️ Settings')}
-      </aside>
-
-      <div style={panelStyle}>
-        {activeTab === 'users' && <AdminUserRoleManagementView />}
-        {activeTab === 'sites' && <AdminPanel onDataChange={refreshData} />}
-        {activeTab === 'add' && <AddEmployeeForm mode="admin" currentUser={currentUser} departments={departments} sites={sites} />}
-        {activeTab === 'approvals' && <ApprovalsView department="All Departments" currentUser={currentUser} />}
-        {activeTab === 'timesheets' && <DepartmentTimeLogsView department="All Departments" currentUser={currentUser} />}
-        {activeTab === 'reports' && <AdminReportSchedulerView />}
-        {activeTab === 'system' && <MasterSettings />}
-      </div>
-    </div>
+    <Shell user={currentUser} roleLabel="Admin" items={items} active={activeTab} onSelect={setActiveTab} onLogout={onLogout}>
+      {activeTab === 'users' && <AdminUserRoleManagementView />}
+      {activeTab === 'sites' && <AdminPanel onDataChange={refreshData} />}
+      {activeTab === 'add' && <AddEmployeeForm mode="admin" currentUser={currentUser} departments={departments} sites={sites} />}
+      {activeTab === 'approvals' && <ApprovalsView department="All Departments" currentUser={currentUser} />}
+      {activeTab === 'timesheets' && <DepartmentTimeLogsView department="All Departments" currentUser={currentUser} />}
+      {activeTab === 'reports' && <AdminReportSchedulerView />}
+      {activeTab === 'system' && <MasterSettings />}
+    </Shell>
   );
 }

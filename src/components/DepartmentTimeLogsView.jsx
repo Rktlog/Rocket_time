@@ -302,7 +302,7 @@ export default function DepartmentTimeLogsView({ department, currentUser }) {
       <div style={weekNavHeaderStyle}>
         <button onClick={() => changeWeek(-1)} style={weekNavBtnStyle}>◀ Prev</button>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#0f172a' }}>
+          <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#16212B' }}>
             Week: {currentWeekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
           </div>
           <button onClick={() => setCurrentWeekStart(getStartOfWeek(new Date()))} style={todayBtnStyle}>Jump to Current Week</button>
@@ -325,27 +325,27 @@ export default function DepartmentTimeLogsView({ department, currentUser }) {
         <div style={{ padding: '10px 12px', borderRadius: '8px', fontSize: '12px', marginBottom: '14px', backgroundColor: '#fffbeb', color: '#92400e', border: '1px solid #fcd34d' }}>
           ⚠️ <strong>{attentionTotal} shift{attentionTotal === 1 ? '' : 's'} need{attentionTotal === 1 ? 's' : ''} checking.</strong>{' '}
           Someone forgot to clock out, so the system closed the shift at 8 PM or it is still open.
-          Open the employee, fix the clock-out time with ✏️ Edit, then approve it.
+          Open the employee, fix the clock-out time with Edit, then approve it.
         </div>
       )}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-        <h3 style={{ margin: 0, fontSize: '15px', color: '#0f172a' }}>📋 Timesheets ({heading})</h3>
+        <h3 style={{ margin: 0, fontSize: '15px', color: '#16212B' }}>Timesheets ({heading})</h3>
         <button onClick={handleBulkApprove} disabled={processing || weeklySummaries.length === 0} style={bulkApproveBtnStyle}>
-          {processing ? 'Processing...' : '⚡ Approve all clear shifts'}
+          {processing ? 'Processing...' : 'Approve all clear shifts'}
         </button>
       </div>
 
       <div style={cardStyle}>
         {loading ? (
-          <div style={{ padding: '16px', color: '#64748b', fontSize: '12px' }}>Loading timesheets...</div>
+          <div style={{ padding: '16px', color: '#5E6A76', fontSize: '12px' }}>Loading timesheets...</div>
         ) : weeklySummaries.length === 0 ? (
-          <div style={{ padding: '16px', color: '#94a3b8', fontSize: '12px' }}>No shift logs for this week.</div>
+          <div style={{ padding: '16px', color: '#8B97A3', fontSize: '12px' }}>No shift logs for this week.</div>
         ) : (
           <div style={responsiveTableWrapper}>
             <table style={{ width: '100%', minWidth: '480px', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
-                <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #D8DEE3', textAlign: 'left' }}>
                   <th style={{ padding: '8px' }}>Employee</th>
                   <th style={{ padding: '8px' }}>Weekly Hrs</th>
                   <th style={{ padding: '8px' }}>Status</th>
@@ -362,11 +362,11 @@ export default function DepartmentTimeLogsView({ department, currentUser }) {
                   }[emp.status];
                   return (
                     <React.Fragment key={emp.id}>
-                      <tr style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: isOpen ? '#f8fafc' : '#ffffff' }}>
-                        <td onClick={() => setExpandedUser(isOpen ? null : emp.id)} style={{ padding: '10px 8px', fontWeight: 'bold', color: '#2563eb', cursor: 'pointer', wordBreak: 'break-word' }}>
+                      <tr style={{ borderBottom: '1px solid #EDF0F2', backgroundColor: isOpen ? '#F5F7F8' : '#ffffff' }}>
+                        <td onClick={() => setExpandedUser(isOpen ? null : emp.id)} style={{ padding: '10px 8px', fontWeight: 'bold', color: '#2F5D7C', cursor: 'pointer', wordBreak: 'break-word' }}>
                           {isOpen ? '▼ ' : '▶ '} {emp.name}
                         </td>
-                        <td style={{ padding: '8px', fontWeight: 'bold', color: '#0f172a' }}>{emp.weeklyTotalHours} hrs</td>
+                        <td style={{ padding: '8px', fontWeight: 'bold', color: '#16212B' }}>{emp.weeklyTotalHours} hrs</td>
                         <td style={{ padding: '8px' }}>
                           <span style={{ padding: '3px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 'bold', backgroundColor: chip[0], color: chip[1], whiteSpace: 'nowrap' }}>
                             {emp.status}
@@ -375,11 +375,11 @@ export default function DepartmentTimeLogsView({ department, currentUser }) {
                         <td style={{ padding: '8px', textAlign: 'right' }}>
                           <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
                             <button onClick={() => setExpandedUser(isOpen ? null : emp.id)} style={editBtnStyle}>
-                              {isOpen ? 'Close' : '🔍 Shifts'}
+                              {isOpen ? 'Close' : 'Shifts'}
                             </button>
                             {approvable(emp.shifts).length > 0 && (
                               <button onClick={() => handleApproveEmployee(emp)} disabled={processing} style={approveBtnStyle}>
-                                ✓ Approve
+                                Approve
                               </button>
                             )}
                           </div>
@@ -388,15 +388,15 @@ export default function DepartmentTimeLogsView({ department, currentUser }) {
 
                       {isOpen && (
                         <tr>
-                          <td colSpan="4" style={{ padding: '8px', backgroundColor: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
-                            <div style={{ backgroundColor: '#ffffff', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-                              <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#0f172a' }}>
-                                🗓️ Shifts for <strong>{emp.name}</strong>
+                          <td colSpan="4" style={{ padding: '8px', backgroundColor: '#EDF0F2', borderBottom: '2px solid #C9D1D8' }}>
+                            <div style={{ backgroundColor: '#ffffff', padding: '10px', borderRadius: '8px', border: '1px solid #C9D1D8' }}>
+                              <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#16212B' }}>
+                                Shifts for <strong>{emp.name}</strong>
                               </h4>
                               <div style={responsiveTableWrapper}>
                                 <table style={{ width: '100%', minWidth: '640px', borderCollapse: 'collapse', fontSize: '12px' }}>
                                   <thead>
-                                    <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1', textAlign: 'left' }}>
+                                    <tr style={{ backgroundColor: '#F5F7F8', borderBottom: '1px solid #C9D1D8', textAlign: 'left' }}>
                                       <th style={{ padding: '6px' }}>Date</th>
                                       <th style={{ padding: '6px' }}>In</th>
                                       <th style={{ padding: '6px' }}>Out</th>
@@ -411,53 +411,53 @@ export default function DepartmentTimeLogsView({ department, currentUser }) {
                                       const editing = editingLogId === s.logId;
                                       return (
                                         <React.Fragment key={s.logId}>
-                                          <tr style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: s.flagged ? '#fffbeb' : 'transparent' }}>
+                                          <tr style={{ borderBottom: '1px solid #EDF0F2', backgroundColor: s.flagged ? '#fffbeb' : 'transparent' }}>
                                             <td style={{ padding: '6px', whiteSpace: 'nowrap' }}>
-                                              <div style={{ fontWeight: 'bold', color: '#0f172a' }}>{s.day}, {s.date}</div>
+                                              <div style={{ fontWeight: 'bold', color: '#16212B' }}>{s.day}, {s.date}</div>
                                               {s.flagged && <div style={{ fontSize: '10px', color: '#b45309', fontWeight: 'bold' }}>⚠️ Check clock-out</div>}
                                               {s.status === 'Approved' && s.approvedByName && (
-                                                <div style={{ fontSize: '10px', color: '#15803d' }}>✓ {s.approvedByName}, {fmtStamp(s.approvedAt)}</div>
+                                                <div style={{ fontSize: '10px', color: '#15803d' }}>Approved by {s.approvedByName}, {fmtStamp(s.approvedAt)}</div>
                                               )}
                                               {s.editedByName && (
-                                                <div style={{ fontSize: '10px', color: '#64748b' }} title={s.editNote || ''}>
-                                                  ✏️ Edited by {s.editedByName}, {fmtStamp(s.editedAt)}
+                                                <div style={{ fontSize: '10px', color: '#5E6A76' }} title={s.editNote || ''}>
+                                                  Edited by {s.editedByName}, {fmtStamp(s.editedAt)}
                                                 </div>
                                               )}
                                             </td>
                                             <td style={{ padding: '6px', color: '#15803d', fontWeight: 'bold' }}>
                                               {editing ? (
                                                 <input type="time" value={editInTime} onChange={(e) => setEditInTime(e.target.value)} style={timeInputStyle} />
-                                              ) : `🟢 ${s.clockIn}`}
+                                              ) : `${s.clockIn}`}
                                             </td>
                                             <td style={{ padding: '6px', color: '#b91c1c', fontWeight: 'bold' }}>
                                               {editing ? (
                                                 <input type="time" value={editOutTime} onChange={(e) => setEditOutTime(e.target.value)} style={timeInputStyle} />
-                                              ) : `⏹ ${s.clockOut}`}
+                                              ) : `${s.clockOut}`}
                                             </td>
                                             <td style={{ padding: '6px', whiteSpace: 'nowrap' }}>
-                                              <span style={{ padding: '2px 6px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', backgroundColor: s.noBreak ? '#fef3c7' : '#f1f5f9', color: s.noBreak ? '#b45309' : '#475569' }}>
+                                              <span style={{ padding: '2px 6px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', backgroundColor: s.noBreak ? '#fef3c7' : '#EDF0F2', color: s.noBreak ? '#b45309' : '#4A5763' }}>
                                                 {breakLabel(s.noBreak)}
                                               </span>
                                             </td>
                                             <td style={{ padding: '6px', whiteSpace: 'nowrap' }}>
-                                              <span style={{ padding: '2px 6px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', backgroundColor: s.container !== 'none' ? '#e0e7ff' : '#f1f5f9', color: s.container !== 'none' ? '#3730a3' : '#94a3b8' }}>
+                                              <span style={{ padding: '2px 6px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', backgroundColor: s.container !== 'none' ? '#DCE8F0' : '#EDF0F2', color: s.container !== 'none' ? '#244A63' : '#8B97A3' }}>
                                                 {containerLabel(s.container)}
                                               </span>
                                             </td>
-                                            <td style={{ padding: '6px', fontWeight: 'bold', color: '#0f172a' }}>{s.paidHours}</td>
+                                            <td style={{ padding: '6px', fontWeight: 'bold', color: '#16212B' }}>{s.paidHours}</td>
                                             <td style={{ padding: '6px', textAlign: 'right' }}>
                                               {editing ? (
                                                 <div style={{ display: 'flex', gap: '3px', justifyContent: 'flex-end' }}>
                                                   <button onClick={() => setEditingLogId(null)} style={editBtnStyle}>Cancel</button>
-                                                  <button onClick={() => saveShiftEdit(s)} disabled={processing} style={approveBtnStyle}>Save 💾</button>
+                                                  <button onClick={() => saveShiftEdit(s)} disabled={processing} style={approveBtnStyle}>Save</button>
                                                 </div>
                                               ) : (
                                                 <div style={{ display: 'flex', gap: '3px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                                                   {s.rawClockOut && s.status !== 'Approved' && (
-                                                    <button onClick={() => approveLogs([s], '')} disabled={processing} style={approveBtnStyle}>✓</button>
+                                                    <button onClick={() => approveLogs([s], '')} disabled={processing} style={approveBtnStyle}></button>
                                                   )}
-                                                  <button onClick={() => startEditShift(s)} style={editBtnStyle}>✏️ Edit</button>
-                                                  <button onClick={() => toggleHistory(s.logId)} style={editBtnStyle} title="Who changed this shift">📜</button>
+                                                  <button onClick={() => startEditShift(s)} style={editBtnStyle}>Edit</button>
+                                                  <button onClick={() => toggleHistory(s.logId)} style={editBtnStyle} title="Who changed this shift"></button>
                                                 </div>
                                               )}
                                             </td>
@@ -465,7 +465,7 @@ export default function DepartmentTimeLogsView({ department, currentUser }) {
 
                                           {editing && (
                                             <tr>
-                                              <td colSpan="7" style={{ padding: '6px', backgroundColor: '#f8fafc' }}>
+                                              <td colSpan="7" style={{ padding: '6px', backgroundColor: '#F5F7F8' }}>
                                                 <input
                                                   type="text"
                                                   placeholder="Reason for the change (required), e.g. forgot to clock out, finished at 4:15"
@@ -479,7 +479,7 @@ export default function DepartmentTimeLogsView({ department, currentUser }) {
 
                                           {historyLogId === s.logId && (
                                             <tr>
-                                              <td colSpan="7" style={{ padding: '8px', backgroundColor: '#f8fafc', fontSize: '11px', color: '#475569' }}>
+                                              <td colSpan="7" style={{ padding: '8px', backgroundColor: '#F5F7F8', fontSize: '11px', color: '#4A5763' }}>
                                                 {history.length === 0 ? 'No changes recorded for this shift.' : history.map((h) => (
                                                   <div key={h.id} style={{ marginBottom: '4px' }}>
                                                     <strong>{fmtStamp(h.created_at)}</strong>, {h.edited_by_name || 'Someone'}:{' '}

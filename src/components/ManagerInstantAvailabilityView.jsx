@@ -141,17 +141,17 @@ export default function ManagerInstantAvailabilityView({ department, location })
 
   return (
     <div>
-      <h2 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>⏱️ Instant Staff Availability & Shift Offers</h2>
-      <p style={{ color: '#64748b', fontSize: '12px', marginTop: '2px', marginBottom: '16px' }}>Select week and day to inspect availability and send shift invitations.</p>
+      <h2 style={{ margin: 0, fontSize: '18px', color: '#16212B' }}>Instant Staff Availability & Shift Offers</h2>
+      <p style={{ color: '#5E6A76', fontSize: '12px', marginTop: '2px', marginBottom: '16px' }}>Select week and day to inspect availability and send shift invitations.</p>
 
       {msg && <div style={{ padding: '10px 12px', backgroundColor: '#dcfce7', color: '#15803d', borderRadius: '8px', fontSize: '12px', fontWeight: '500', marginBottom: '14px' }}>{msg}</div>}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', backgroundColor: '#f1f5f9', borderRadius: '10px', marginBottom: '14px', border: '1px solid #cbd5e1', flexWrap: 'wrap', gap: '6px' }}>
-        <button onClick={() => changeWeek(-1)} style={{ padding: '5px 10px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', color: '#334155' }}>◀ Prev</button>
-        <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#0f172a', textAlign: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', backgroundColor: '#EDF0F2', borderRadius: '10px', marginBottom: '14px', border: '1px solid #C9D1D8', flexWrap: 'wrap', gap: '6px' }}>
+        <button onClick={() => changeWeek(-1)} style={{ padding: '5px 10px', backgroundColor: '#ffffff', border: '1px solid #C9D1D8', borderRadius: '6px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', color: '#3A4753' }}>◀ Prev</button>
+        <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#16212B', textAlign: 'center' }}>
           {currentWeekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
         </div>
-        <button onClick={() => changeWeek(1)} style={{ padding: '5px 10px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', color: '#334155' }}>Next ▶</button>
+        <button onClick={() => changeWeek(1)} style={{ padding: '5px 10px', backgroundColor: '#ffffff', border: '1px solid #C9D1D8', borderRadius: '6px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', color: '#3A4753' }}>Next ▶</button>
       </div>
 
       <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '4px' }}>
@@ -170,8 +170,8 @@ export default function ManagerInstantAvailabilityView({ department, location })
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 flexShrink: 0,
-                backgroundColor: selectedDay === day ? '#2563eb' : '#e2e8f0',
-                color: selectedDay === day ? '#ffffff' : '#334155'
+                backgroundColor: selectedDay === day ? '#2F5D7C' : '#D8DEE3',
+                color: selectedDay === day ? '#ffffff' : '#3A4753'
               }}
             >
               <div>{day.slice(0, 3)}</div>
@@ -181,20 +181,20 @@ export default function ManagerInstantAvailabilityView({ department, location })
         })}
       </div>
 
-      <div style={{ backgroundColor: '#f8fafc', padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-        <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#0f172a' }}>
+      <div style={{ backgroundColor: '#F5F7F8', padding: '14px', borderRadius: '8px', border: '1px solid #D8DEE3' }}>
+        <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#16212B' }}>
           Availability for <strong>{selectedDay}</strong> ({department || 'All Staff'})
         </h4>
 
         {loading ? (
-          <div style={{ padding: '12px', color: '#64748b', fontSize: '12px' }}>Checking staff availability...</div>
+          <div style={{ padding: '12px', color: '#5E6A76', fontSize: '12px' }}>Checking staff availability...</div>
         ) : staffRoster.length === 0 ? (
-          <div style={{ padding: '12px', color: '#94a3b8', fontSize: '12px' }}>No employees registered in the system.</div>
+          <div style={{ padding: '12px', color: '#8B97A3', fontSize: '12px' }}>No employees registered in the system.</div>
         ) : (
           <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <table style={{ width: '100%', minWidth: '500px', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
-                <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #D8DEE3', textAlign: 'left' }}>
                   <th style={{ padding: '8px' }}>Employee</th>
                   <th style={{ padding: '8px' }}>Email</th>
                   <th style={{ padding: '8px' }}>Status</th>
@@ -203,17 +203,17 @@ export default function ManagerInstantAvailabilityView({ department, location })
               </thead>
               <tbody>
                 {staffRoster.map((staff) => (
-                  <tr key={staff.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#0f172a', wordBreak: 'break-word' }}>{staff.full_name || 'Unnamed Staff'}</td>
-                    <td style={{ padding: '8px', color: '#64748b', wordBreak: 'break-all' }}>{staff.email}</td>
+                  <tr key={staff.id} style={{ borderBottom: '1px solid #EDF0F2' }}>
+                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#16212B', wordBreak: 'break-word' }}>{staff.full_name || 'Unnamed Staff'}</td>
+                    <td style={{ padding: '8px', color: '#5E6A76', wordBreak: 'break-all' }}>{staff.email}</td>
                     <td style={{ padding: '8px' }}>
                       {staff.isAvailable ? (
-                        <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold', backgroundColor: '#dcfce7', color: '#15803d', whiteSpace: 'nowrap' }}>
-                          🟢 Available ({staff.timing})
+                        <span style={{ padding: '3px 8px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', backgroundColor: '#dcfce7', color: '#15803d', whiteSpace: 'nowrap' }}>
+                          Available ({staff.timing})
                         </span>
                       ) : (
-                        <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold', backgroundColor: '#fef2f2', color: '#dc2626', whiteSpace: 'nowrap' }}>
-                          🔴 Marked Unavailable
+                        <span style={{ padding: '3px 8px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', backgroundColor: '#fef2f2', color: '#dc2626', whiteSpace: 'nowrap' }}>
+                          Marked Unavailable
                         </span>
                       )}
                     </td>
@@ -228,12 +228,12 @@ export default function ManagerInstantAvailabilityView({ department, location })
                           fontSize: '11px',
                           fontWeight: 'bold',
                           cursor: staff.isAvailable ? 'pointer' : 'not-allowed',
-                          backgroundColor: !staff.isAvailable ? '#cbd5e1' : sendingId === staff.id ? '#94a3b8' : '#2563eb',
+                          backgroundColor: !staff.isAvailable ? '#C9D1D8' : sendingId === staff.id ? '#8B97A3' : '#2F5D7C',
                           color: '#ffffff',
                           whiteSpace: 'nowrap'
                         }}
                       >
-                        {!staff.isAvailable ? 'Unavailable' : sendingId === staff.id ? 'Sending...' : 'Offer Shift 🚀'}
+                        {!staff.isAvailable ? 'Unavailable' : sendingId === staff.id ? 'Sending...' : 'Offer Shift'}
                       </button>
                     </td>
                   </tr>

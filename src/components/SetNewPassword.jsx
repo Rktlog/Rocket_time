@@ -27,8 +27,8 @@ export default function SetNewPassword({ onDone }) {
     <div style={loginWrapperStyle}>
       <div style={loginCardStyle}>
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <div style={{ fontSize: '36px', marginBottom: '6px' }}>🔐</div>
-          <h2 style={{ margin: 0, fontSize: '20px', color: '#0f172a', fontWeight: 'bold' }}>Choose a new password</h2>
+          <div style={{ fontSize: '36px', marginBottom: '6px' }}></div>
+          <h2 style={{ margin: 0, fontSize: '20px', color: '#16212B', fontWeight: 'bold' }}>Choose a new password</h2>
         </div>
         {errorMsg && <div style={{ ...errorAlertStyle, marginBottom: '12px' }}>{errorMsg}</div>}
         <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

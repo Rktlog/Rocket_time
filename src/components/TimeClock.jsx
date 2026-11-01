@@ -204,7 +204,7 @@ export default function TimeClock({ employee, scheduledShift }) {
       }
 
       setMsg({
-        text: `🌙 8:00 PM shift cutoff reached! Automatically clocked out.`,
+        text: `8:00 PM shift cutoff reached! Automatically clocked out.`,
         isError: false,
       });
 
@@ -254,7 +254,7 @@ export default function TimeClock({ employee, scheduledShift }) {
   // 3. Clock In with Strict GPS Check
   const handleStartClockIn = () => {
     setLoading(true);
-    setMsg({ text: `📡 Verifying live GPS position for site: ${allocatedSite.name}...`, isError: false });
+    setMsg({ text: `Verifying live GPS position for site: ${allocatedSite.name}...`, isError: false });
 
     if (!allocatedSite.lat || !allocatedSite.lng) {
       setMsg({
@@ -351,7 +351,7 @@ export default function TimeClock({ employee, scheduledShift }) {
           setClockInTime(now);
           setIsClockedIn(true);
           setElapsedSeconds(0);
-          setMsg({ text: `🟢 Shift started at ${allocatedSite.name}!`, isError: false });
+          setMsg({ text: `Shift started at ${allocatedSite.name}!`, isError: false });
         } catch (err) {
           setMsg({ text: `❌ Database Error: ${err.message}`, isError: true });
         } finally {
@@ -446,131 +446,84 @@ export default function TimeClock({ employee, scheduledShift }) {
     }
   };
 
+  const sinceLabel = clockInTime
+    ? new Date(clockInTime).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false })
+    : '';
+
+  const pick = (setter, value) => () => setter(value);
+
   return (
-    <div style={{ maxWidth: '500px', margin: '0 auto', fontFamily: 'sans-serif' }}>
-      <div style={cardStyle}>
-        <h2 style={{ margin: '0 0 4px 0', fontSize: '20px', color: '#0f172a' }}>
-          ⏱️ Shift Time Clock
-        </h2>
-
-        {/* DISPLAY EMPLOYEE, ALLOCATED SITE & DEPARTMENT */}
-        <div style={infoBoxStyle}>
-          <div>
-            <span style={infoLabelStyle}>Employee</span>
-            <div style={infoValueStyle}>{employee?.name || 'Employee'}</div>
-          </div>
-          <div>
-            <span style={infoLabelStyle}>Department</span>
-            <div style={infoValueStyle}>🏢 {allocatedSite.department}</div>
-          </div>
-          <div style={{ gridColumn: 'span 2' }}>
-            <span style={infoLabelStyle}>Allocated Site</span>
-            <div style={infoValueStyle}>📍 {allocatedSite.name}</div>
-          </div>
+    <section className="rt-punch" data-state={isClockedIn ? 'on' : 'off'}>
+      <div className="rt-punch-top">
+        <div className="rt-where">
+          {employee?.name || 'Employee'}, {allocatedSite.name}
+          {allocatedSite.department ? `, ${allocatedSite.department}` : ''}
         </div>
 
-        <div style={{ textAlign: 'center', margin: '20px 0' }}>
-          {!isClockedIn ? (
-            <button onClick={handleStartClockIn} disabled={loading} style={clockInBtnStyle}>
-              {loading ? 'Verifying GPS...' : '▶ Clock In Shift'}
-            </button>
-          ) : (
-            <div style={timerBoxStyle}>
-              <span style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase' }}>Shift Running (Max 8:00 PM)</span>
-              <div style={{ fontSize: '38px', fontWeight: 'bold', fontFamily: 'monospace', color: '#38bdf8', marginTop: '4px' }}>
-                {formatTimer(elapsedSeconds)}
-              </div>
-            </div>
-          )}
+        <LiveClock />
+
+        <div className="rt-state">
+          <i />
+          {isClockedIn ? `On shift since ${sinceLabel}` : 'Off the clock'}
         </div>
-
-        {/* BUTTON LABELS WITHOUT ADDED MINUTES */}
-        <div style={{ opacity: isClockedIn ? 1 : 0.4, pointerEvents: isClockedIn ? 'auto' : 'none', marginBottom: '20px' }}>
-          <button
-            type="button"
-            onClick={() => setHasNoBreak(!hasNoBreak)}
-            style={{
-              ...optionBtnStyle,
-              border: `2px solid ${hasNoBreak ? '#2563eb' : '#cbd5e1'}`,
-              backgroundColor: hasNoBreak ? '#eff6ff' : '#ffffff',
-              fontWeight: hasNoBreak ? 'bold' : 'normal',
-              color: hasNoBreak ? '#1d4ed8' : '#334155',
-              marginBottom: '10px',
-            }}
-          >
-            ☕ No Break Worked
-          </button>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-            <button
-              type="button"
-              onClick={() => setContainerType('none')}
-              style={{
-                ...optionBtnStyle,
-                border: `2px solid ${containerType === 'none' ? '#2563eb' : '#cbd5e1'}`,
-                backgroundColor: containerType === 'none' ? '#eff6ff' : '#ffffff',
-                fontWeight: containerType === 'none' ? 'bold' : 'normal',
-              }}
-            >
-              No Container
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setContainerType('20ft')}
-              style={{
-                ...optionBtnStyle,
-                border: `2px solid ${containerType === '20ft' ? '#16a34a' : '#cbd5e1'}`,
-                backgroundColor: containerType === '20ft' ? '#f0fdf4' : '#ffffff',
-                fontWeight: containerType === '20ft' ? 'bold' : 'normal',
-                color: containerType === '20ft' ? '#15803d' : '#334155',
-              }}
-            >
-              📦 20 ft
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setContainerType('40ft')}
-              style={{
-                ...optionBtnStyle,
-                border: `2px solid ${containerType === '40ft' ? '#9333ea' : '#cbd5e1'}`,
-                backgroundColor: containerType === '40ft' ? '#faf5ff' : '#ffffff',
-                fontWeight: containerType === '40ft' ? 'bold' : 'normal',
-                color: containerType === '40ft' ? '#7e22ce' : '#334155',
-              }}
-            >
-              📦 40 ft
-            </button>
-          </div>
-        </div>
-
         {isClockedIn && (
-          <button onClick={handleClockOut} disabled={loading} style={clockOutBtnStyle}>
-            {loading ? 'Processing...' : '⏹ Clock Out Shift'}
-          </button>
-        )}
-
-        {msg.text && (
-          <div style={{
-            marginTop: '16px', padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', textAlign: 'center',
-            backgroundColor: msg.isError ? '#fef2f2' : '#f0fdf4',
-            color: msg.isError ? '#991b1b' : '#166534',
-            border: `1px solid ${msg.isError ? '#fca5a5' : '#bbf7d0'}`,
-          }}>
-            {msg.text}
-          </div>
+          <>
+            <div className="rt-elapsed">{formatTimer(elapsedSeconds)}</div>
+            <div className="rt-cutoff">Shifts close automatically at 8:00 PM</div>
+          </>
         )}
       </div>
-    </div>
+
+      <div className="rt-punch-body">
+        {!isClockedIn ? (
+          <button onClick={handleStartClockIn} disabled={loading} className="rt-btn-in">
+            {loading ? 'Checking your location...' : 'Clock in'}
+          </button>
+        ) : (
+          <>
+            <p className="rt-hint">Set these before you clock out. They change your paid hours.</p>
+
+            <button type="button" onClick={() => setHasNoBreak(!hasNoBreak)}
+              className={`rt-toggle${hasNoBreak ? ' is-on' : ''}`} aria-pressed={hasNoBreak}>
+              <span>I did not take a break</span>
+              <span className="rt-check">&#10003;</span>
+            </button>
+
+            <fieldset className="rt-fieldset">
+              <legend>Container unloaded</legend>
+              <div className="rt-seg">
+                <button type="button" className={containerType === 'none' ? 'is-on' : ''} onClick={pick(setContainerType, 'none')}>None</button>
+                <button type="button" className={containerType === '20ft' ? 'is-on' : ''} onClick={pick(setContainerType, '20ft')}>20 ft</button>
+                <button type="button" className={containerType === '40ft' ? 'is-on' : ''} onClick={pick(setContainerType, '40ft')}>40 ft</button>
+              </div>
+            </fieldset>
+
+            <button onClick={handleClockOut} disabled={loading} className="rt-btn-out">
+              {loading ? 'Saving...' : 'Clock out'}
+            </button>
+          </>
+        )}
+
+        {msg.text && <div className={`rt-msg ${msg.isError ? 'err' : 'ok'}`}>{msg.text}</div>}
+      </div>
+    </section>
   );
 }
 
-const cardStyle = { backgroundColor: '#ffffff', padding: '24px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0' };
-const infoBoxStyle = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '12px', backgroundColor: '#f1f5f9', borderRadius: '8px' };
-const infoLabelStyle = { fontSize: '11px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase' };
-const infoValueStyle = { fontSize: '14px', fontWeight: 'bold', color: '#0f172a', marginTop: '2px' };
-const clockInBtnStyle = { width: '100%', padding: '14px', backgroundColor: '#16a34a', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' };
-const clockOutBtnStyle = { width: '100%', padding: '14px', backgroundColor: '#dc2626', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' };
-const timerBoxStyle = { backgroundColor: '#0f172a', padding: '14px', borderRadius: '10px', color: '#fff' };
-const optionBtnStyle = { width: '100%', padding: '10px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', textAlign: 'center' };
+/** Live time of day. Its own timer, so only this small piece re-renders each second. */
+function LiveClock() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const hm = now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const ss = String(now.getSeconds()).padStart(2, '0');
+  const date = now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
+  return (
+    <>
+      <div className="rt-time">{hm}<small>{ss}</small></div>
+      <div className="rt-date-line">{date}</div>
+    </>
+  );
+}

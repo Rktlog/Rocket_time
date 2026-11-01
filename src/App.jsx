@@ -1,7 +1,7 @@
 // src/App.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './lib/supabaseClient';
-import { layoutStyle, headerStyle, logoStyle, mainContentStyle, logoutBtnStyle, badgeStyle } from './lib/styles';
+import Icon from './components/icons';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import LoginPortal from './components/LoginPortal';
@@ -133,59 +133,41 @@ export default function App() {
     }
   };
 
-  if (loadingSession) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#f1f5f9', color: '#64748b', fontSize: '14px', fontWeight: 'bold' }}>
-        🚀 Loading Rocket Time workspace...
+  const authFrame = (node, wide = false) => (
+    <div className="rt-auth">
+      <div className={`rt-auth-inner${wide ? ' is-wide' : ''}`}>
+        <div className="rt-auth-brand"><span className="rt-mark"><Icon name="clock" size={18} /></span>Rocket Time</div>
+        {node}
       </div>
+    </div>
+  );
+
+  if (loadingSession) {
+    return authFrame(<div style={{ textAlign: 'center', color: '#9FB0BF', fontSize: '14px' }}>Loading your workspace...</div>);
+  }
+
+  if (recoveryMode) return authFrame(<SetNewPassword onDone={() => setRecoveryMode(false)} />);
+  if (!currentUser) return authFrame(<LoginPortal onLoginSuccess={restoreUserProfile} notice={loginNotice} />);
+
+  if (!currentUser.onboardingCompleted) {
+    return authFrame(
+      <OnboardingWizard
+        user={currentUser}
+        onComplete={({ name }) =>
+          setCurrentUser((u) => ({ ...u, name: name || u.name, onboardingCompleted: true }))
+        }
+      />,
+      true
     );
   }
 
-  const renderBody = () => {
-    if (recoveryMode) return <SetNewPassword onDone={() => setRecoveryMode(false)} />;
-    if (!currentUser) return <LoginPortal onLoginSuccess={restoreUserProfile} notice={loginNotice} />;
-
-    if (!currentUser.onboardingCompleted) {
-      return (
-        <OnboardingWizard
-          user={currentUser}
-          onComplete={({ name }) =>
-            setCurrentUser((u) => ({ ...u, name: name || u.name, onboardingCompleted: true }))
-          }
-        />
-      );
-    }
-
-    return (
-      <ErrorBoundary>
-        {currentUser.role === 'admin' && (
-          <AdminDashboard currentUser={currentUser} departments={departments} sites={sites} refreshData={fetchDepartmentsAndSites} />
-        )}
-        {currentUser.role === 'manager' && <ManagerDashboard currentUser={currentUser} />}
-        {(currentUser.role === 'user' || currentUser.role === 'employee') && <UserDashboard currentUser={currentUser} />}
-      </ErrorBoundary>
-    );
-  };
-
   return (
-    <div style={layoutStyle}>
-      <header style={headerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <div style={logoStyle}>🚀 Rocket Time</div>
-          {currentUser && <span style={badgeStyle(currentUser.role)}>{currentUser.role.toUpperCase()} PORTAL</span>}
-        </div>
-
-        {currentUser && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', width: '100%', justifyContent: 'space-between' }}>
-            <div style={{ fontSize: '12px', color: '#64748b', wordBreak: 'break-word' }}>
-              Logged in: <strong>{currentUser.name}</strong> ({currentUser.department})
-            </div>
-            <button onClick={handleLogout} style={logoutBtnStyle}>🚪 Log Out</button>
-          </div>
-        )}
-      </header>
-
-      <main style={mainContentStyle}>{renderBody()}</main>
-    </div>
+    <ErrorBoundary>
+      {currentUser.role === 'admin' && (
+        <AdminDashboard currentUser={currentUser} departments={departments} sites={sites} refreshData={fetchDepartmentsAndSites} onLogout={handleLogout} />
+      )}
+      {currentUser.role === 'manager' && <ManagerDashboard currentUser={currentUser} onLogout={handleLogout} />}
+      {(currentUser.role === 'user' || currentUser.role === 'employee') && <UserDashboard currentUser={currentUser} onLogout={handleLogout} />}
+    </ErrorBoundary>
   );
 }

@@ -57,15 +57,15 @@ export default function ManagerStaffListView({ currentDepartment }) {
 
   return (
     <div>
-      <h2 style={viewHeadingStyle}>👥 Department Staff Roster</h2>
+      <h2 style={viewHeadingStyle}>Department Staff Roster</h2>
       <p style={subTextStyle}>Active employees in your department.</p>
 
-      {msg && <div style={{ ...(msg.startsWith('❌') ? errorAlertStyle : successBannerStyle), marginBottom: '14px' }}>{msg}</div>}
+      {msg && <div style={{ ...(msg.startsWith('') ? errorAlertStyle : successBannerStyle), marginBottom: '14px' }}>{msg}</div>}
 
       <div style={{ marginBottom: '14px', maxWidth: '400px' }}>
         <input
           type="text"
-          placeholder="🔍 Search department staff..."
+          placeholder="Search department staff..."
           value={searchTerm}
           onChange={(e) => setSearchFilter(e.target.value)}
           style={{ ...inputStyle, width: '100%' }}
@@ -74,14 +74,14 @@ export default function ManagerStaffListView({ currentDepartment }) {
 
       <div style={cardStyle}>
         {loading ? (
-          <div style={{ padding: '16px', color: '#64748b', fontSize: '12px' }}>Loading department staff...</div>
+          <div style={{ padding: '16px', color: '#5E6A76', fontSize: '12px' }}>Loading department staff...</div>
         ) : filteredStaff.length === 0 ? (
-          <div style={{ padding: '16px', color: '#94a3b8', fontSize: '12px' }}>No staff members found.</div>
+          <div style={{ padding: '16px', color: '#8B97A3', fontSize: '12px' }}>No staff members found.</div>
         ) : (
           <div style={responsiveTableWrapper}>
             <table style={{ width: '100%', minWidth: '450px', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
-                <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #D8DEE3', textAlign: 'left' }}>
                   <th style={{ padding: '8px' }}>Staff Name</th>
                   <th style={{ padding: '8px' }}>Email</th>
                   <th style={{ padding: '8px' }}>Phone</th>
@@ -90,13 +90,13 @@ export default function ManagerStaffListView({ currentDepartment }) {
               </thead>
               <tbody>
                 {filteredStaff.map((u) => (
-                  <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#0f172a', wordBreak: 'break-word' }}>{u.full_name}</td>
-                    <td style={{ padding: '8px', color: '#64748b', wordBreak: 'break-all' }}>{u.email}</td>
-                    <td style={{ padding: '8px', color: '#0f172a' }}>📞 {u.phone || 'N/A'}</td>
+                  <tr key={u.id} style={{ borderBottom: '1px solid #EDF0F2' }}>
+                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#16212B', wordBreak: 'break-word' }}>{u.full_name}</td>
+                    <td style={{ padding: '8px', color: '#5E6A76', wordBreak: 'break-all' }}>{u.email}</td>
+                    <td style={{ padding: '8px', color: '#16212B' }}>{u.phone || 'N/A'}</td>
                     <td style={{ padding: '8px', textAlign: 'right' }}>
                       <button onClick={() => setUserToRemove(u)} style={declineBtnStyle}>
-                        🚫 Deactivate
+                        Deactivate
                       </button>
                     </td>
                   </tr>
@@ -110,10 +110,10 @@ export default function ManagerStaffListView({ currentDepartment }) {
       {userToRemove && (
         <div style={modalOverlayStyle}>
           <div style={{ ...modalBoxStyle, maxWidth: '400px' }}>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#0f172a' }}>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#16212B' }}>
               ⚠️ Deactivate this employee?
             </h3>
-            <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: '#64748b', lineHeight: '1.4' }}>
+            <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: '#5E6A76', lineHeight: '1.4' }}>
               <strong>{userToRemove.full_name}</strong> will no longer be able to sign in, and will disappear from rosters and shift offers. Their time logs and history are kept. Only an admin can reactivate them.
             </p>
 

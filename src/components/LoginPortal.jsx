@@ -52,17 +52,17 @@ export default function LoginPortal({ onLoginSuccess, notice }) {
     }
   };
 
-  const linkBtn = { background: 'none', border: 'none', color: '#2563eb', fontSize: '12px', cursor: 'pointer', padding: 0, textDecoration: 'underline' };
+  const linkBtn = { background: 'none', border: 'none', color: '#2F5D7C', fontSize: '12px', cursor: 'pointer', padding: 0, textDecoration: 'underline' };
 
   return (
     <div style={loginWrapperStyle}>
       <div style={loginCardStyle}>
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <div style={{ fontSize: '36px', marginBottom: '6px' }}>🚀</div>
-          <h2 style={{ margin: 0, fontSize: '20px', color: '#0f172a', fontWeight: 'bold' }}>
+          <div style={{ fontSize: '36px', marginBottom: '6px' }}></div>
+          <h2 style={{ margin: 0, fontSize: '20px', color: '#16212B', fontWeight: 'bold' }}>
             {mode === 'signin' ? 'Rocket Time Login' : 'Reset your password'}
           </h2>
-          <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#64748b' }}>
+          <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#5E6A76' }}>
             {mode === 'signin'
               ? 'Enter your workplace credentials to access your workspace.'
               : 'Enter your work email and we will send you a link.'}
@@ -84,7 +84,7 @@ export default function LoginPortal({ onLoginSuccess, notice }) {
               <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} />
             </div>
             <button type="submit" disabled={loading} style={loginBtnStyle}>
-              {loading ? 'Authenticating...' : 'Sign In 🚀'}
+              {loading ? 'Authenticating...' : 'Sign In'}
             </button>
             <div style={{ textAlign: 'center' }}>
               <button type="button" style={linkBtn} onClick={() => { setMode('forgot'); setErrorMsg(''); setInfoMsg(''); }}>

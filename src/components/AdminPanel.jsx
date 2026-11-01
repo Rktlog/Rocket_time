@@ -101,7 +101,7 @@ export default function AdminPanel({ onDataChange }) {
     e.preventDefault();
     if (!newSiteName.trim()) return;
 
-    setMsg({ text: '📡 Geocoding location and saving site...', isError: false });
+    setMsg({ text: 'Geocoding location and saving site...', isError: false });
 
     const fullAddress = formatAddress(newStreet, newSuburb, newState, newPostcode);
     const coords = await geocodeAddress(newStreet, newSuburb, newState, newPostcode);
@@ -155,7 +155,7 @@ export default function AdminPanel({ onDataChange }) {
   // Update Site
   const handleUpdateSite = async (e) => {
     e.preventDefault();
-    setMsg({ text: '📡 Updating GPS coordinates and site details...', isError: false });
+    setMsg({ text: 'Updating GPS coordinates and site details...', isError: false });
 
     const fullAddress = formatAddress(editStreet, editSuburb, editState, editPostcode);
     const coords = await geocodeAddress(editStreet, editSuburb, editState, editPostcode);
@@ -223,7 +223,7 @@ export default function AdminPanel({ onDataChange }) {
 
   return (
     <div>
-      <h2>📍 Sites & Department Configuration</h2>
+      <h2>Sites & Department Configuration</h2>
       <p style={subTextStyle}>Configure workplace sites and operational departments.</p>
 
       {msg.text && (
@@ -242,7 +242,7 @@ export default function AdminPanel({ onDataChange }) {
         {/* SITES SECTION */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div style={cardStyle}>
-            <h3 style={cardHeadingStyle}>➕ Add New Site</h3>
+            <h3 style={cardHeadingStyle}>Add New Site</h3>
             <form onSubmit={handleAddSite}>
               <label style={labelStyle}>Site / Location Name</label>
               <input
@@ -316,22 +316,22 @@ export default function AdminPanel({ onDataChange }) {
                   <option value="">No saved departments available</option>
                 ) : (
                   departments.map((dept) => (
-                    <option key={dept.id} value={dept.name}>🏢 {dept.name}</option>
+                    <option key={dept.id} value={dept.name}>{dept.name}</option>
                   ))
                 )}
               </select>
 
-              <button type="submit" style={primaryBtnStyle}>Save Site 📍</button>
+              <button type="submit" style={primaryBtnStyle}>Save Site</button>
             </form>
           </div>
 
           {/* CONFIGURED SITES LIST */}
           <div style={cardStyle}>
-            <h3 style={cardHeadingStyle}>🏢 Configured Sites</h3>
+            <h3 style={cardHeadingStyle}>Configured Sites</h3>
             {loading ? (
-              <div style={{ color: '#64748b', fontSize: '13px' }}>Loading sites...</div>
+              <div style={{ color: '#5E6A76', fontSize: '13px' }}>Loading sites...</div>
             ) : sites.length === 0 ? (
-              <div style={{ color: '#94a3b8', fontSize: '13px' }}>No configured sites in database.</div>
+              <div style={{ color: '#8B97A3', fontSize: '13px' }}>No configured sites in database.</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {sites.map((site) => (
@@ -403,28 +403,28 @@ export default function AdminPanel({ onDataChange }) {
                           style={inputStyle}
                         >
                           {departments.map((dept) => (
-                            <option key={dept.id} value={dept.name}>🏢 {dept.name}</option>
+                            <option key={dept.id} value={dept.name}>{dept.name}</option>
                           ))}
                         </select>
 
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '6px' }}>
                           <button type="button" onClick={() => setEditingSiteId(null)} style={secondaryBtnStyle}>Cancel</button>
-                          <button type="submit" style={primaryBtnStyle}>Save Changes 💾</button>
+                          <button type="submit" style={primaryBtnStyle}>Save Changes</button>
                         </div>
                       </form>
                     ) : (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                         <div>
-                          <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#0f172a' }}>
-                            📍 {site.name} {site.department && <span style={deptBadgeStyle}>🏢 {site.department}</span>}
+                          <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#16212B' }}>
+                            {site.name} {site.department && <span style={deptBadgeStyle}>{site.department}</span>}
                           </div>
-                          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                          <div style={{ fontSize: '12px', color: '#5E6A76', marginTop: '4px' }}>
                             {site.address || 'No address specified'}
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: '6px' }}>
-                          <button onClick={() => startEditingSite(site)} style={secondaryBtnStyle}>✏️ Edit</button>
-                          <button onClick={() => handleDeleteSite(site.id, site.name)} style={deleteBtnStyle}>🗑️</button>
+                          <button onClick={() => startEditingSite(site)} style={secondaryBtnStyle}>Edit</button>
+                          <button onClick={() => handleDeleteSite(site.id, site.name)} style={deleteBtnStyle}></button>
                         </div>
                       </div>
                     )}
@@ -438,7 +438,7 @@ export default function AdminPanel({ onDataChange }) {
         {/* DEPARTMENTS SECTION */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div style={cardStyle}>
-            <h3 style={cardHeadingStyle}>➕ Add Department</h3>
+            <h3 style={cardHeadingStyle}>Add Department</h3>
             <form onSubmit={handleAddDept}>
               <label style={labelStyle}>Department Name</label>
               <input
@@ -449,21 +449,21 @@ export default function AdminPanel({ onDataChange }) {
                 required
                 style={{ ...inputStyle, marginBottom: '16px' }}
               />
-              <button type="submit" style={primaryBtnStyle}>Add Dept 🏢</button>
+              <button type="submit" style={primaryBtnStyle}>Add Dept</button>
             </form>
           </div>
 
           <div style={cardStyle}>
-            <h3 style={cardHeadingStyle}>📋 Configured Departments</h3>
+            <h3 style={cardHeadingStyle}>Configured Departments</h3>
             {loading ? (
-              <div style={{ color: '#64748b', fontSize: '13px' }}>Loading departments...</div>
+              <div style={{ color: '#5E6A76', fontSize: '13px' }}>Loading departments...</div>
             ) : departments.length === 0 ? (
-              <div style={{ color: '#94a3b8', fontSize: '13px' }}>No departments found.</div>
+              <div style={{ color: '#8B97A3', fontSize: '13px' }}>No departments found.</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {departments.map((dept) => (
                   <div key={dept.id} style={{ ...listItemStyle, justifyContent: 'space-between' }}>
-                    <span style={{ fontWeight: 'bold', fontSize: '14px', color: '#0f172a' }}>🏢 {dept.name}</span>
+                    <span style={{ fontWeight: 'bold', fontSize: '14px', color: '#16212B' }}>{dept.name}</span>
                   </div>
                 ))}
               </div>
@@ -477,13 +477,13 @@ export default function AdminPanel({ onDataChange }) {
 }
 
 // Inline Styles
-const cardStyle = { backgroundColor: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' };
-const cardHeadingStyle = { margin: '0 0 16px 0', fontSize: '16px', color: '#0f172a' };
-const subTextStyle = { color: '#64748b', fontSize: '14px', marginTop: '4px', marginBottom: '24px' };
-const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' };
-const inputStyle = { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' };
-const primaryBtnStyle = { padding: '8px 14px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' };
-const secondaryBtnStyle = { padding: '6px 12px', backgroundColor: '#ffffff', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' };
+const cardStyle = { backgroundColor: '#F5F7F8', padding: '20px', borderRadius: '8px', border: '1px solid #D8DEE3' };
+const cardHeadingStyle = { margin: '0 0 16px 0', fontSize: '16px', color: '#16212B' };
+const subTextStyle = { color: '#5E6A76', fontSize: '14px', marginTop: '4px', marginBottom: '24px' };
+const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#4A5763', marginBottom: '4px' };
+const inputStyle = { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #C9D1D8', fontSize: '14px', boxSizing: 'border-box' };
+const primaryBtnStyle = { padding: '8px 14px', backgroundColor: '#2F5D7C', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' };
+const secondaryBtnStyle = { padding: '6px 12px', backgroundColor: '#ffffff', color: '#3A4753', border: '1px solid #C9D1D8', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' };
 const deleteBtnStyle = { padding: '6px 10px', backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' };
-const listItemStyle = { padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', display: 'flex', alignItems: 'center' };
-const deptBadgeStyle = { fontSize: '11px', backgroundColor: '#e0e7ff', color: '#3730a3', padding: '2px 8px', borderRadius: '12px', marginLeft: '6px', fontWeight: 'bold' };
+const listItemStyle = { padding: '12px', borderRadius: '8px', border: '1px solid #C9D1D8', backgroundColor: '#ffffff', display: 'flex', alignItems: 'center' };
+const deptBadgeStyle = { fontSize: '11px', backgroundColor: '#DCE8F0', color: '#244A63', padding: '2px 8px', borderRadius: '8px', marginLeft: '6px', fontWeight: 'bold' };

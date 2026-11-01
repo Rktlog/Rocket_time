@@ -57,12 +57,12 @@ export default function AdminReportSchedulerView() {
 
   return (
     <div>
-      <h2 style={viewHeadingStyle}>📧 Automated Timesheet Reports</h2>
+      <h2 style={viewHeadingStyle}>Automated Timesheet Reports</h2>
       <p style={subTextStyle}>Configure recipient emails, dispatch days, and exact times for automated report delivery.</p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
         <div style={cardStyle}>
-          <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#0f172a' }}>➕ Schedule New Report</h3>
+          <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#16212B' }}>Schedule New Report</h3>
           
           <form onSubmit={handleCreateSchedule}>
             <label style={labelStyle}>Recipient Email Address</label>
@@ -81,9 +81,9 @@ export default function AdminReportSchedulerView() {
               onChange={(e) => setFrequency(e.target.value)}
               style={{ ...inputStyle, width: '100%', marginBottom: '10px' }}
             >
-              <option value="Weekly">📅 Weekly Summary</option>
-              <option value="Bi-Weekly">🗓️ Bi-Weekly Summary</option>
-              <option value="Monthly">📊 Monthly Timesheet Report</option>
+              <option value="Weekly">Weekly Summary</option>
+              <option value="Bi-Weekly">Bi-Weekly Summary</option>
+              <option value="Monthly">Monthly Timesheet Report</option>
             </select>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
@@ -112,25 +112,25 @@ export default function AdminReportSchedulerView() {
               </div>
             </div>
 
-            <button type="submit" style={btnStyle('#2563eb')}>Save Schedule 🚀</button>
+            <button type="submit" style={btnStyle('#2F5D7C')}>Save Schedule</button>
           </form>
 
           {msg && <div style={{ ...successBannerStyle, marginTop: '14px' }}>{msg}</div>}
         </div>
 
         <div style={cardStyle}>
-          <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#0f172a' }}>📋 Active Scheduled Reports</h3>
+          <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#16212B' }}>Active Scheduled Reports</h3>
 
           {schedules.length === 0 ? (
-            <div style={{ color: '#94a3b8', fontSize: '12px' }}>No active report schedules configured in Supabase.</div>
+            <div style={{ color: '#8B97A3', fontSize: '12px' }}>No active report schedules configured in Supabase.</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {schedules.map(sch => (
-                <div key={sch.id} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div key={sch.id} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #C9D1D8', backgroundColor: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a', wordBreak: 'break-all' }}>{sch.email}</div>
-                    <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-                      ⏰ {sch.freq} on <strong>{sch.day}s at {sch.time}</strong>
+                    <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#16212B', wordBreak: 'break-all' }}>{sch.email}</div>
+                    <div style={{ fontSize: '11px', color: '#5E6A76', marginTop: '2px' }}>
+                      {sch.freq} on <strong>{sch.day}s at {sch.time}</strong>
                     </div>
                   </div>
                   <button onClick={() => handleDeleteSchedule(sch.id)} style={{ ...declineBtnStyle, padding: '4px 6px', fontSize: '10px' }}>

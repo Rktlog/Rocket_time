@@ -65,7 +65,7 @@ export default function AddEmployeeForm({ mode, currentUser, departments = [], s
 
   return (
     <div>
-      <h2 style={viewHeadingStyle}>➕ Add Employee</h2>
+      <h2 style={viewHeadingStyle}>Add Employee</h2>
       <p style={subTextStyle}>
         {isAdmin
           ? 'Create an employee profile directly. No invite needed.'
@@ -84,25 +84,25 @@ export default function AddEmployeeForm({ mode, currentUser, departments = [], s
             <>
               <label style={labelStyle}>Assign Site / Location</label>
               <select value={site} onChange={(e) => setSite(e.target.value)} style={field}>
-                {sites.map((s) => <option key={s.id} value={s.name}>📍 {s.name}</option>)}
+                {sites.map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}
               </select>
 
               <label style={labelStyle}>Assign Department</label>
               <select value={dept} onChange={(e) => setDept(e.target.value)} style={field}>
-                {departments.map((d) => <option key={d.id} value={d.name}>🏢 {d.name}</option>)}
+                {departments.map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
               </select>
             </>
           )}
 
           <label style={labelStyle}>Employment Type</label>
           <select value={employmentType} onChange={(e) => setEmploymentType(e.target.value)} style={{ ...field, marginBottom: '16px' }}>
-            <option value="Full Time">💼 Full Time</option>
-            <option value="Part Time">⏱️ Part Time</option>
-            <option value="Casual">📅 Casual</option>
+            <option value="Full Time">Full Time</option>
+            <option value="Part Time">Part Time</option>
+            <option value="Casual">Casual</option>
           </select>
 
-          <button type="submit" disabled={saving} style={btnStyle(isAdmin ? '#2563eb' : '#0f172a')}>
-            {saving ? 'Creating...' : 'Create Profile ✅'}
+          <button type="submit" disabled={saving} style={btnStyle(isAdmin ? '#2F5D7C' : '#16212B')}>
+            {saving ? 'Creating...' : 'Create Profile'}
           </button>
         </form>
 
@@ -112,7 +112,7 @@ export default function AddEmployeeForm({ mode, currentUser, departments = [], s
               <div>
                 ✅ Profile created for <strong>{result.email}</strong>.<br />
                 Temporary password: <code style={{ fontWeight: 'bold', userSelect: 'all' }}>{result.tempPassword}</code>{' '}
-                <button type="button" onClick={copyPassword} style={{ cursor: 'pointer' }}>{copied ? 'Copied ✓' : 'Copy'}</button>
+                <button type="button" onClick={copyPassword} style={{ cursor: 'pointer' }}>{copied ? 'Copied' : 'Copy'}</button>
                 <br />
                 Give this to them now. It is not shown again. On first sign-in they confirm their details and choose their own password.
                 <div><button type="button" onClick={() => setResult(null)} style={{ marginTop: '8px', cursor: 'pointer' }}>Done</button></div>

@@ -64,13 +64,13 @@ export default function MasterSettings() {
   };
 
   return (
-    <div style={{ maxWidth: '650px', margin: '0 auto', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: '650px', margin: '0 auto', }}>
       
       {/* HEADER */}
-      <h2 style={{ fontSize: '22px', fontWeight: 'bold', color: '#0f172a', marginBottom: '8px' }}>
-        ⚙️ Master Security Settings
+      <h2 style={{ fontSize: '22px', fontWeight: 'bold', color: '#16212B', marginBottom: '8px' }}>
+        Master Security Settings
       </h2>
-      <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '24px' }}>
+      <p style={{ color: '#5E6A76', fontSize: '14px', marginBottom: '24px' }}>
         Manage system settings and update the Master Administrator account password.
       </p>
 
@@ -83,8 +83,8 @@ export default function MasterSettings() {
 
       {/* CHANGE PASSWORD CARD */}
       <div style={cardStyle}>
-        <h3 style={{ marginTop: 0, marginBottom: '16px', color: '#0f172a', fontSize: '18px' }}>
-          🔒 Change Admin Password
+        <h3 style={{ marginTop: 0, marginBottom: '16px', color: '#16212B', fontSize: '18px' }}>
+          Change Admin Password
         </h3>
 
         <form onSubmit={handlePasswordChange} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -137,7 +137,7 @@ export default function MasterSettings() {
               cursor: loading ? 'not-allowed' : 'pointer',
             }}
           >
-            {loading ? 'Updating Password...' : 'Update Master Password 🔑'}
+            {loading ? 'Updating Password...' : 'Update Master Password'}
           </button>
         </form>
       </div>
@@ -147,10 +147,10 @@ export default function MasterSettings() {
 }
 
 // Styling definitions
-const cardStyle = { padding: '28px', border: '1px solid #e2e8f0', borderRadius: '12px', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' };
-const inputStyle = { width: '100%', padding: '10px 12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', outline: 'none' };
-const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '6px' };
-const btnStyle = { width: '100%', padding: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px' };
+const cardStyle = { padding: '28px', border: '1px solid #D8DEE3', borderRadius: '8px', background: '#fff', };
+const inputStyle = { width: '100%', padding: '10px 12px', boxSizing: 'border-box', border: '1px solid #C9D1D8', borderRadius: '8px', fontSize: '14px', outline: 'none' };
+const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#4A5763', marginBottom: '6px' };
+const btnStyle = { width: '100%', padding: '12px', background: '#2F5D7C', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px' };
 const msgBannerStyle = (isError) => ({
   background: isError ? '#fef2f2' : '#f0f9ff',
   color: isError ? '#991b1b' : '#0369a1',

@@ -267,7 +267,7 @@ export default function ManagerRosterManager({ department }) {
       });
 
       setPublishedShifts(prev => prev.filter(s => s.id !== shift.id));
-      setMsg({ text: '🗑️ Shift permanently removed from roster.', isError: false });
+      setMsg({ text: 'Shift permanently removed from roster.', isError: false });
     } catch (err) {
       setMsg({ text: `❌ Delete failed: ${err.message}`, isError: true });
     } finally {
@@ -291,8 +291,8 @@ export default function ManagerRosterManager({ department }) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
         <div>
-          <h2 style={{ margin: 0, color: '#0f172a', fontSize: '18px' }}>📅 Department Shift Roster</h2>
-          <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#64748b' }}>
+          <h2 style={{ margin: 0, color: '#16212B', fontSize: '18px' }}>Department Shift Roster</h2>
+          <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#5E6A76' }}>
             Set times on the Roster Grid and publish approved weekly schedules.
           </p>
         </div>
@@ -302,26 +302,26 @@ export default function ManagerRosterManager({ department }) {
             onClick={() => setActiveTab('approved')}
             style={{
               padding: '8px 12px', borderRadius: '6px', border: 'none', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer',
-              backgroundColor: activeSubTab === 'approved' ? '#2563eb' : '#f1f5f9',
-              color: activeSubTab === 'approved' ? '#ffffff' : '#475569'
+              backgroundColor: activeSubTab === 'approved' ? '#2F5D7C' : '#EDF0F2',
+              color: activeSubTab === 'approved' ? '#ffffff' : '#4A5763'
             }}
           >
-            📖 Approved Roster
+            Approved Roster
           </button>
 
           <button
             onClick={() => setActiveTab('grid')}
             style={{
               padding: '8px 12px', borderRadius: '6px', border: 'none', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer',
-              backgroundColor: activeSubTab === 'grid' ? '#2563eb' : '#f1f5f9',
-              color: activeSubTab === 'grid' ? '#ffffff' : '#475569'
+              backgroundColor: activeSubTab === 'grid' ? '#2F5D7C' : '#EDF0F2',
+              color: activeSubTab === 'grid' ? '#ffffff' : '#4A5763'
             }}
           >
-            ✏️ Roster Grid {hasUnsavedChanges && '●'}
+            Roster Grid {hasUnsavedChanges && '●'}
           </button>
 
           <button onClick={handleSaveAndPublish} disabled={saving} style={primaryBtnStyle}>
-            {saving ? 'Publishing...' : 'Save & Publish 💾'}
+            {saving ? 'Publishing...' : 'Save & Publish'}
           </button>
         </div>
       </div>
@@ -340,7 +340,7 @@ export default function ManagerRosterManager({ department }) {
       <div style={weekNavHeaderStyle}>
         <button onClick={() => changeWeek(-1)} style={weekNavBtnStyle}>◀ Prev</button>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#0f172a' }}>
+          <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#16212B' }}>
             Week of {currentWeekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
           </div>
           {hasUnsavedChanges && (
@@ -359,8 +359,8 @@ export default function ManagerRosterManager({ department }) {
             <div style={emptyCardStyle}>Loading Approved Roster...</div>
           ) : publishedShifts.length === 0 ? (
             <div style={emptyCardStyle}>
-              <h3 style={{ margin: 0, fontSize: '15px' }}>📭 No Approved Roster For This Week</h3>
-              <p style={{ margin: '4px 0 0 0', color: '#94a3b8', fontSize: '12px' }}>
+              <h3 style={{ margin: 0, fontSize: '15px' }}>No Approved Roster For This Week</h3>
+              <p style={{ margin: '4px 0 0 0', color: '#8B97A3', fontSize: '12px' }}>
                 Use the Roster Grid tab to assign shifts and click "Save & Publish".
               </p>
             </div>
@@ -373,21 +373,21 @@ export default function ManagerRosterManager({ department }) {
                 const dayShifts = publishedShifts.filter(s => s.shift_date === dateStr);
 
                 return (
-                  <div key={dayName} style={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '14px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
+                  <div key={dayName} style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #D8DEE3', padding: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid #EDF0F2', paddingBottom: '8px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#0f172a' }}>{dayName}</span>
-                        <span style={{ fontSize: '11px', fontWeight: '500', color: '#64748b' }}>
+                        <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#16212B' }}>{dayName}</span>
+                        <span style={{ fontSize: '11px', fontWeight: '500', color: '#5E6A76' }}>
                           {dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                         </span>
                       </div>
-                      <span style={{ fontSize: '11px', fontWeight: 'bold', color: dayShifts.length > 0 ? '#2563eb' : '#94a3b8', backgroundColor: dayShifts.length > 0 ? '#eff6ff' : '#f8fafc', padding: '3px 8px', borderRadius: '16px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 'bold', color: dayShifts.length > 0 ? '#2F5D7C' : '#8B97A3', backgroundColor: dayShifts.length > 0 ? '#E8F0F5' : '#F5F7F8', padding: '3px 8px', borderRadius: '8px' }}>
                         {dayShifts.length} {dayShifts.length === 1 ? 'Shift' : 'Shifts'}
                       </span>
                     </div>
 
                     {dayShifts.length === 0 ? (
-                      <div style={{ color: '#94a3b8', fontSize: '12px', fontStyle: 'italic', padding: '4px 0' }}>
+                      <div style={{ color: '#8B97A3', fontSize: '12px', fontStyle: 'italic', padding: '4px 0' }}>
                         No shifts scheduled for this day
                       </div>
                     ) : (
@@ -400,29 +400,29 @@ export default function ManagerRosterManager({ department }) {
                                   {(s.employee_name || 'E').charAt(0).toUpperCase()}
                                 </div>
                                 <div>
-                                  <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a', wordBreak: 'break-word' }}>
+                                  <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#16212B', wordBreak: 'break-word' }}>
                                     {s.employee_name || 'Employee'}
                                   </div>
-                                  <div style={{ fontSize: '10px', color: '#64748b' }}>
-                                    📍 {s.location || 'Site not set'}
+                                  <div style={{ fontSize: '10px', color: '#5E6A76' }}>
+                                    {s.location || 'Site not set'}
                                   </div>
                                 </div>
                               </div>
 
-                              <button onClick={() => handleDeletePublishedShift(s)} style={cardDeleteBtnStyle}>✕</button>
+                              <button onClick={() => handleDeletePublishedShift(s)} style={cardDeleteBtnStyle}></button>
                             </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed #e2e8f0' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed #D8DEE3' }}>
                               <span style={timePillStyle}>
-                                ⏰ {formatTimeString(s.start_time)} – {formatTimeString(s.end_time)}
+                                {formatTimeString(s.start_time)} – {formatTimeString(s.end_time)}
                               </span>
 
                               <span style={{
                                 padding: '2px 6px', borderRadius: '10px', fontSize: '10px', fontWeight: 'bold',
-                                backgroundColor: s.status === 'Accepted' ? '#dcfce7' : '#dbeafe',
+                                backgroundColor: s.status === 'Accepted' ? '#dcfce7' : '#D7E5EE',
                                 color: s.status === 'Accepted' ? '#15803d' : '#1e40af'
                               }}>
-                                {s.status === 'Accepted' ? '✓ Accepted' : 'Assigned'}
+                                {s.status === 'Accepted' ? 'Accepted' : 'Assigned'}
                               </span>
                             </div>
                           </div>
@@ -437,16 +437,16 @@ export default function ManagerRosterManager({ department }) {
         </div>
       ) : (
         /* SECTION 2: ROSTER GRID */
-        <div style={{ backgroundColor: '#ffffff', padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+        <div style={{ backgroundColor: '#ffffff', padding: '14px', borderRadius: '8px', border: '1px solid #D8DEE3' }}>
           {loading ? (
-            <div style={{ padding: '20px', textAlign: 'center', color: '#64748b', fontSize: '12px' }}>Loading Roster Grid...</div>
+            <div style={{ padding: '20px', textAlign: 'center', color: '#5E6A76', fontSize: '12px' }}>Loading Roster Grid...</div>
           ) : staffList.length === 0 ? (
-            <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>No staff found.</div>
+            <div style={{ padding: '20px', textAlign: 'center', color: '#8B97A3', fontSize: '12px' }}>No staff found.</div>
           ) : (
             <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
               <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '12px' }}>
                 <thead>
-                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                  <tr style={{ backgroundColor: '#F5F7F8', borderBottom: '2px solid #D8DEE3', textAlign: 'left' }}>
                     <th style={{ padding: '8px', minWidth: '130px' }}>Staff Member</th>
                     {DAYS_OF_WEEK.map((dayName, idx) => {
                       const dateObj = new Date(currentWeekStart);
@@ -454,7 +454,7 @@ export default function ManagerRosterManager({ department }) {
                       return (
                         <th key={dayName} style={{ padding: '8px', textAlign: 'center', minWidth: '130px' }}>
                           <div>{dayName}</div>
-                          <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 'normal' }}>
+                          <div style={{ fontSize: '10px', color: '#5E6A76', fontWeight: 'normal' }}>
                             {dateObj.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' })}
                           </div>
                         </th>
@@ -464,8 +464,8 @@ export default function ManagerRosterManager({ department }) {
                 </thead>
                 <tbody>
                   {staffList.map((staff) => (
-                    <tr key={staff.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '8px', fontWeight: 'bold', color: '#0f172a', wordBreak: 'break-word' }}>
+                    <tr key={staff.id} style={{ borderBottom: '1px solid #EDF0F2' }}>
+                      <td style={{ padding: '8px', fontWeight: 'bold', color: '#16212B', wordBreak: 'break-word' }}>
                         {staff.full_name || 'Unnamed'}
                       </td>
 
@@ -481,7 +481,7 @@ export default function ManagerRosterManager({ department }) {
                         return (
                           <td key={dateStr} style={{ padding: '6px', textAlign: 'center' }}>
                             {!dayAvail.isAvailable ? (
-                              <div style={unavailableStyle}>🚫 Unavailable</div>
+                              <div style={unavailableStyle}>Unavailable</div>
                             ) : isAssigned ? (
                               <div style={assignedBoxStyle}>
                                 <div style={{ display: 'flex', gap: '2px', alignItems: 'center', justifyContent: 'center' }}>
@@ -500,15 +500,15 @@ export default function ManagerRosterManager({ department }) {
                                   />
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
-                                  <span style={{ fontSize: '9px', fontWeight: 'bold', color: shiftData.status === 'Accepted' ? '#15803d' : '#2563eb' }}>
-                                    {shiftData.status === 'Accepted' ? '✓ Accepted' : 'Assigned'}
+                                  <span style={{ fontSize: '9px', fontWeight: 'bold', color: shiftData.status === 'Accepted' ? '#15803d' : '#2F5D7C' }}>
+                                    {shiftData.status === 'Accepted' ? 'Accepted' : 'Assigned'}
                                   </span>
-                                  <button onClick={() => toggleShiftAssignment(staff.id, dateStr, dayName)} style={removeShiftBtnStyle}>✕</button>
+                                  <button onClick={() => toggleShiftAssignment(staff.id, dateStr, dayName)} style={removeShiftBtnStyle}></button>
                                 </div>
                               </div>
                             ) : (
                               <button onClick={() => toggleShiftAssignment(staff.id, dateStr, dayName)} style={assignBtnStyle}>
-                                ➕ Assign ({dayAvail.startTime}-{dayAvail.endTime})
+                                Assign ({dayAvail.startTime}-{dayAvail.endTime})
                               </button>
                             )}
                           </td>
@@ -527,18 +527,18 @@ export default function ManagerRosterManager({ department }) {
 }
 
 // Inline Styles
-const primaryBtnStyle = { padding: '8px 14px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' };
-const weekNavHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: '#f1f5f9', borderRadius: '8px', marginBottom: '16px', border: '1px solid #cbd5e1', flexWrap: 'wrap', gap: '6px' };
-const weekNavBtnStyle = { padding: '5px 10px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', color: '#334155' };
-const emptyCardStyle = { backgroundColor: '#ffffff', padding: '24px', borderRadius: '12px', border: '1px dashed #cbd5e1', textAlign: 'center' };
+const primaryBtnStyle = { padding: '8px 14px', backgroundColor: '#2F5D7C', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' };
+const weekNavHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: '#EDF0F2', borderRadius: '8px', marginBottom: '16px', border: '1px solid #C9D1D8', flexWrap: 'wrap', gap: '6px' };
+const weekNavBtnStyle = { padding: '5px 10px', backgroundColor: '#ffffff', border: '1px solid #C9D1D8', borderRadius: '6px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', color: '#3A4753' };
+const emptyCardStyle = { backgroundColor: '#ffffff', padding: '24px', borderRadius: '8px', border: '1px dashed #C9D1D8', textAlign: 'center' };
 
-const shiftCardStyle = { backgroundColor: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' };
-const avatarStyle = { width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#2563eb', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px' };
+const shiftCardStyle = { backgroundColor: '#F5F7F8', padding: '12px', borderRadius: '10px', border: '1px solid #D8DEE3', };
+const avatarStyle = { width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#2F5D7C', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px' };
 const cardDeleteBtnStyle = { background: 'none', border: 'none', color: '#dc2626', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', padding: '2px 4px', borderRadius: '4px' };
-const timePillStyle = { backgroundColor: '#eff6ff', color: '#1d4ed8', padding: '3px 8px', borderRadius: '16px', fontSize: '10px', fontWeight: 'bold' };
+const timePillStyle = { backgroundColor: '#E8F0F5', color: '#244A63', padding: '3px 8px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold' };
 
 const unavailableStyle = { padding: '4px 2px', borderRadius: '4px', backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', fontWeight: 'bold', fontSize: '10px' };
 const assignedBoxStyle = { padding: '4px 6px', borderRadius: '6px', border: '1px solid #16a34a', backgroundColor: '#dcfce7' };
 const timeInputStyle = { width: '60px', padding: '2px 1px', border: '1px solid #86efac', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', textAlign: 'center', backgroundColor: '#ffffff', outline: 'none' };
 const removeShiftBtnStyle = { background: 'none', border: 'none', color: '#dc2626', fontWeight: 'bold', fontSize: '10px', cursor: 'pointer', padding: '0 2px' };
-const assignBtnStyle = { width: '100%', padding: '5px 2px', borderRadius: '6px', border: '1px dashed #cbd5e1', backgroundColor: '#ffffff', color: '#64748b', fontWeight: 'bold', fontSize: '10px', cursor: 'pointer', wordBreak: 'break-all' };
+const assignBtnStyle = { width: '100%', padding: '5px 2px', borderRadius: '6px', border: '1px dashed #C9D1D8', backgroundColor: '#ffffff', color: '#5E6A76', fontWeight: 'bold', fontSize: '10px', cursor: 'pointer', wordBreak: 'break-all' };

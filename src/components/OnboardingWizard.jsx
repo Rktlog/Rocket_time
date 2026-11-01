@@ -55,9 +55,9 @@ export default function OnboardingWizard({ user, onComplete }) {
 
   return (
     <div style={{ maxWidth: '560px', margin: '0 auto' }}>
-      <div style={{ backgroundColor: '#f1f5f9', padding: '16px 20px', borderRadius: '10px', marginBottom: '16px' }}>
-        <h3 style={{ margin: 0, fontSize: '16px', color: '#0f172a' }}>Welcome, {user?.name || 'there'}! 👋</h3>
-        <span style={{ fontSize: '13px', color: '#64748b' }}>
+      <div style={{ backgroundColor: '#EDF0F2', padding: '16px 20px', borderRadius: '10px', marginBottom: '16px' }}>
+        <h3 style={{ margin: 0, fontSize: '16px', color: '#16212B' }}>Welcome, {user?.name || 'there'}!</h3>
+        <span style={{ fontSize: '13px', color: '#5E6A76' }}>
           Two quick things before you start: confirm your details and choose your own password.
         </span>
       </div>
@@ -81,7 +81,7 @@ export default function OnboardingWizard({ user, onComplete }) {
         <input type="password" value={form.confirm} onChange={set('confirm')} required style={{ ...inputStyle, marginBottom: '16px' }} />
 
         <button type="submit" disabled={loading} style={btnStyle('#16a34a')}>
-          {loading ? 'Saving...' : 'Finish setup ✅'}
+          {loading ? 'Saving...' : 'Finish setup'}
         </button>
       </form>
     </div>

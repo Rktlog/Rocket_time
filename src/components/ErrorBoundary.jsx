@@ -22,7 +22,7 @@ export default class ErrorBoundary extends React.Component {
           padding: '16px',
           backgroundColor: '#fef2f2',
           border: '1px solid #fca5a5',
-          borderRadius: '12px',
+          borderRadius: '8px',
           color: '#991b1b',
           margin: '16px auto',
           maxWidth: '600px',
@@ -48,7 +48,7 @@ export default class ErrorBoundary extends React.Component {
               cursor: 'pointer'
             }}
           >
-            🔄 Refresh Workspace
+            Refresh Workspace
           </button>
         </div>
       );

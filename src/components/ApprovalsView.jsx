@@ -144,55 +144,55 @@ export default function ApprovalsView({ department, currentUser }) {
   const waitingForManager = swaps.filter((s) => s.status === 'Awaiting manager');
   const waitingForColleague = swaps.filter((s) => s.status === 'Awaiting colleague');
 
-  const rowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', padding: '10px 0', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap' };
+  const rowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', padding: '10px 0', borderBottom: '1px solid #D8DEE3', flexWrap: 'wrap' };
 
   return (
     <div>
-      <h2 style={viewHeadingStyle}>✅ Approvals</h2>
+      <h2 style={viewHeadingStyle}>Approvals</h2>
       <p style={subTextStyle}>Time off and shift hand-overs waiting for a decision.</p>
 
       {msg.text && <div style={{ ...(msg.isError ? errorAlertStyle : successBannerStyle), marginBottom: '14px' }}>{msg.text}</div>}
 
       {loading ? (
-        <div style={{ fontSize: '12px', color: '#64748b' }}>Loading...</div>
+        <div style={{ fontSize: '12px', color: '#5E6A76' }}>Loading...</div>
       ) : (
         <div style={{ display: 'grid', gap: '14px', maxWidth: '720px' }}>
           <div style={cardStyle}>
-            <h3 style={{ margin: '0 0 6px 0', fontSize: '14px', color: '#0f172a' }}>🌴 Time off ({leave.length})</h3>
-            {leave.length === 0 ? <div style={{ fontSize: '12px', color: '#94a3b8' }}>Nothing waiting.</div> : leave.map((r) => (
+            <h3 style={{ margin: '0 0 6px 0', fontSize: '14px', color: '#16212B' }}>Time off ({leave.length})</h3>
+            {leave.length === 0 ? <div style={{ fontSize: '12px', color: '#8B97A3' }}>Nothing waiting.</div> : leave.map((r) => (
               <div key={r.id} style={rowStyle}>
-                <div style={{ fontSize: '13px', color: '#0f172a' }}>
+                <div style={{ fontSize: '13px', color: '#16212B' }}>
                   <strong>{r.employee_name}</strong>, {r.leave_type}
-                  <div style={{ fontSize: '12px', color: '#475569' }}>
+                  <div style={{ fontSize: '12px', color: '#4A5763' }}>
                     {prettyDate(r.start_date)}{r.end_date !== r.start_date ? ` to ${prettyDate(r.end_date)}` : ''}
                   </div>
-                  {r.reason && <div style={{ fontSize: '11px', color: '#64748b' }}>"{r.reason}"</div>}
+                  {r.reason && <div style={{ fontSize: '11px', color: '#5E6A76' }}>"{r.reason}"</div>}
                 </div>
                 <div style={{ display: 'flex', gap: '6px' }}>
-                  <button onClick={() => decideLeave(r, true)} disabled={busyId === r.id} style={approveBtnStyle}>✓ Approve</button>
-                  <button onClick={() => decideLeave(r, false)} disabled={busyId === r.id} style={declineBtnStyle}>✕ Decline</button>
+                  <button onClick={() => decideLeave(r, true)} disabled={busyId === r.id} style={approveBtnStyle}>Approve</button>
+                  <button onClick={() => decideLeave(r, false)} disabled={busyId === r.id} style={declineBtnStyle}>Decline</button>
                 </div>
               </div>
             ))}
           </div>
 
           <div style={cardStyle}>
-            <h3 style={{ margin: '0 0 6px 0', fontSize: '14px', color: '#0f172a' }}>🔄 Shift hand-overs ({waitingForManager.length})</h3>
-            {waitingForManager.length === 0 ? <div style={{ fontSize: '12px', color: '#94a3b8' }}>Nothing waiting.</div> : waitingForManager.map((s) => (
+            <h3 style={{ margin: '0 0 6px 0', fontSize: '14px', color: '#16212B' }}>Shift hand-overs ({waitingForManager.length})</h3>
+            {waitingForManager.length === 0 ? <div style={{ fontSize: '12px', color: '#8B97A3' }}>Nothing waiting.</div> : waitingForManager.map((s) => (
               <div key={s.id} style={rowStyle}>
-                <div style={{ fontSize: '13px', color: '#0f172a' }}>
+                <div style={{ fontSize: '13px', color: '#16212B' }}>
                   <strong>{s.requester_name}</strong> gives <strong>{prettyDate(s.shift_date)}</strong> to <strong>{s.target_name}</strong>
                   <div style={{ fontSize: '11px', color: '#15803d' }}>{s.target_name} has agreed</div>
-                  {s.note && <div style={{ fontSize: '11px', color: '#64748b' }}>"{s.note}"</div>}
+                  {s.note && <div style={{ fontSize: '11px', color: '#5E6A76' }}>"{s.note}"</div>}
                 </div>
                 <div style={{ display: 'flex', gap: '6px' }}>
-                  <button onClick={() => approveSwap(s)} disabled={busyId === s.id} style={approveBtnStyle}>✓ Approve</button>
-                  <button onClick={() => declineSwap(s)} disabled={busyId === s.id} style={declineBtnStyle}>✕ Decline</button>
+                  <button onClick={() => approveSwap(s)} disabled={busyId === s.id} style={approveBtnStyle}>Approve</button>
+                  <button onClick={() => declineSwap(s)} disabled={busyId === s.id} style={declineBtnStyle}>Decline</button>
                 </div>
               </div>
             ))}
             {waitingForColleague.length > 0 && (
-              <div style={{ marginTop: '10px', fontSize: '11px', color: '#64748b' }}>
+              <div style={{ marginTop: '10px', fontSize: '11px', color: '#5E6A76' }}>
                 Still waiting on the colleague: {waitingForColleague.map((s) => `${s.requester_name} to ${s.target_name} (${prettyDate(s.shift_date)})`).join(', ')}
               </div>
             )}
@@ -200,12 +200,12 @@ export default function ApprovalsView({ department, currentUser }) {
 
           {recentLeave.length > 0 && (
             <div style={cardStyle}>
-              <h3 style={{ margin: '0 0 6px 0', fontSize: '14px', color: '#0f172a' }}>Recently decided time off</h3>
+              <h3 style={{ margin: '0 0 6px 0', fontSize: '14px', color: '#16212B' }}>Recently decided time off</h3>
               {recentLeave.map((r) => (
                 <div key={r.id} style={{ ...rowStyle, padding: '6px 0' }}>
-                  <div style={{ fontSize: '12px', color: '#0f172a' }}>
+                  <div style={{ fontSize: '12px', color: '#16212B' }}>
                     {r.employee_name}: {prettyDate(r.start_date)}{r.end_date !== r.start_date ? ` to ${prettyDate(r.end_date)}` : ''}
-                    <span style={{ color: '#64748b' }}> (by {r.decided_by_name})</span>
+                    <span style={{ color: '#5E6A76' }}> (by {r.decided_by_name})</span>
                   </div>
                   <span style={statusChipStyle(r.status)}>{r.status}</span>
                 </div>

@@ -23,12 +23,12 @@ export default function MyRequests({ user }) {
 
   return (
     <div>
-      <h2 style={viewHeadingStyle}>🔁 Requests</h2>
+      <h2 style={viewHeadingStyle}>Requests</h2>
       <p style={subTextStyle}>Ask for time off, or hand one of your shifts to a colleague. Your manager signs off.</p>
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
-        <button onClick={() => setTab('leave')} style={tab === 'leave' ? btnStyle('#2563eb') : editBtnStyle}>🌴 Time off</button>
-        <button onClick={() => setTab('swaps')} style={tab === 'swaps' ? btnStyle('#2563eb') : editBtnStyle}>🔄 Shift hand-over</button>
+        <button onClick={() => setTab('leave')} style={tab === 'leave' ? btnStyle('#2F5D7C') : editBtnStyle}>Time off</button>
+        <button onClick={() => setTab('swaps')} style={tab === 'swaps' ? btnStyle('#2F5D7C') : editBtnStyle}>Shift hand-over</button>
       </div>
 
       {msg.text && (
@@ -133,20 +133,20 @@ function LeaveSection({ user, flash }) {
         <label style={labelStyle}>Note (optional)</label>
         <input type="text" value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} style={{ ...inputStyle, marginBottom: '14px' }} />
 
-        <button type="submit" disabled={saving} style={btnStyle('#2563eb')}>{saving ? 'Sending...' : 'Request time off'}</button>
+        <button type="submit" disabled={saving} style={btnStyle('#2F5D7C')}>{saving ? 'Sending...' : 'Request time off'}</button>
       </form>
 
       <div style={cardStyle}>
-        <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#0f172a' }}>My requests</h3>
-        {loading ? <div style={{ fontSize: '12px', color: '#64748b' }}>Loading...</div>
-          : requests.length === 0 ? <div style={{ fontSize: '12px', color: '#94a3b8' }}>No requests yet.</div>
+        <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#16212B' }}>My requests</h3>
+        {loading ? <div style={{ fontSize: '12px', color: '#5E6A76' }}>Loading...</div>
+          : requests.length === 0 ? <div style={{ fontSize: '12px', color: '#8B97A3' }}>No requests yet.</div>
             : requests.map((r) => (
-              <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', padding: '8px 0', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
+              <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', padding: '8px 0', borderBottom: '1px solid #D8DEE3', flexWrap: 'wrap' }}>
                 <div>
-                  <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a' }}>
+                  <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#16212B' }}>
                     {r.leave_type}: {prettyDate(r.start_date)}{r.end_date !== r.start_date ? ` to ${prettyDate(r.end_date)}` : ''}
                   </div>
-                  {r.decision_note && <div style={{ fontSize: '11px', color: '#64748b' }}>Manager: {r.decision_note}</div>}
+                  {r.decision_note && <div style={{ fontSize: '11px', color: '#5E6A76' }}>Manager: {r.decision_note}</div>}
                 </div>
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                   <span style={statusChipStyle(r.status)}>{r.status}</span>
@@ -267,22 +267,22 @@ function SwapSection({ user, flash }) {
     }
   };
 
-  if (loading) return <div style={{ fontSize: '12px', color: '#64748b' }}>Loading...</div>;
+  if (loading) return <div style={{ fontSize: '12px', color: '#5E6A76' }}>Loading...</div>;
 
   return (
     <div style={{ display: 'grid', gap: '14px', maxWidth: '560px' }}>
       {incoming.length > 0 && (
         <div style={{ ...cardStyle, border: '1px solid #fcd34d', backgroundColor: '#fffbeb' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#92400e' }}>📥 Asking you to take a shift</h3>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#92400e' }}>Asking you to take a shift</h3>
           {incoming.map((s) => (
             <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', padding: '8px 0', flexWrap: 'wrap' }}>
               <div style={{ fontSize: '13px' }}>
                 <strong>{s.requester_name}</strong> wants you to take <strong>{prettyDate(s.shift_date)}</strong>
-                {s.note && <div style={{ fontSize: '11px', color: '#64748b' }}>"{s.note}"</div>}
+                {s.note && <div style={{ fontSize: '11px', color: '#5E6A76' }}>"{s.note}"</div>}
               </div>
               <div style={{ display: 'flex', gap: '6px' }}>
-                <button onClick={() => answer(s, true)} style={approveBtnStyle}>✓ Accept</button>
-                <button onClick={() => answer(s, false)} style={declineBtnStyle}>✕ Decline</button>
+                <button onClick={() => answer(s, true)} style={approveBtnStyle}>Accept</button>
+                <button onClick={() => answer(s, false)} style={declineBtnStyle}>Decline</button>
               </div>
             </div>
           ))}
@@ -290,7 +290,7 @@ function SwapSection({ user, flash }) {
       )}
 
       <form onSubmit={submit} style={cardStyle}>
-        <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#0f172a' }}>Hand one of my shifts to a colleague</h3>
+        <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#16212B' }}>Hand one of my shifts to a colleague</h3>
 
         <label style={labelStyle}>My shift</label>
         <select required value={form.shift_id} onChange={(e) => setForm({ ...form, shift_id: e.target.value })} style={{ ...inputStyle, marginBottom: '12px' }}>
@@ -309,16 +309,16 @@ function SwapSection({ user, flash }) {
         <label style={labelStyle}>Note (optional)</label>
         <input type="text" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} style={{ ...inputStyle, marginBottom: '14px' }} />
 
-        <button type="submit" disabled={saving || myShifts.length === 0} style={btnStyle('#2563eb')}>
+        <button type="submit" disabled={saving || myShifts.length === 0} style={btnStyle('#2F5D7C')}>
           {saving ? 'Sending...' : 'Ask colleague'}
         </button>
       </form>
 
       <div style={cardStyle}>
-        <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#0f172a' }}>My hand-over requests</h3>
-        {mine.length === 0 ? <div style={{ fontSize: '12px', color: '#94a3b8' }}>None yet.</div> : mine.map((s) => (
-          <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', padding: '8px 0', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
-            <div style={{ fontSize: '13px', color: '#0f172a' }}>
+        <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#16212B' }}>My hand-over requests</h3>
+        {mine.length === 0 ? <div style={{ fontSize: '12px', color: '#8B97A3' }}>None yet.</div> : mine.map((s) => (
+          <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', padding: '8px 0', borderBottom: '1px solid #D8DEE3', flexWrap: 'wrap' }}>
+            <div style={{ fontSize: '13px', color: '#16212B' }}>
               <strong>{prettyDate(s.shift_date)}</strong> to {s.target_name}
             </div>
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>

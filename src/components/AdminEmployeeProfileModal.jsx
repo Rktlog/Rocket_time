@@ -22,10 +22,10 @@ export default function AdminEmployeeProfileModal({ userData, onClose, onSave })
     <div style={modalOverlayStyle}>
       <div style={{ ...modalBoxStyle, maxWidth: '480px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <h2 style={{ margin: 0, fontSize: '16px', color: '#0f172a', wordBreak: 'break-word' }}>
-            👤 Employee: {profile.full_name}
+          <h2 style={{ margin: 0, fontSize: '16px', color: '#16212B', wordBreak: 'break-word' }}>
+            Employee: {profile.full_name}
           </h2>
-          <button onClick={onClose} style={closeModalBtnStyle}>✕ Close</button>
+          <button onClick={onClose} style={closeModalBtnStyle}>Close</button>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -36,7 +36,7 @@ export default function AdminEmployeeProfileModal({ userData, onClose, onSave })
 
           <div>
             <label style={labelStyle}>Email Address</label>
-            <input type="email" value={profile.email} readOnly disabled title="Email is the login, so it can't be changed here" style={{ ...inputStyle, backgroundColor: '#f1f5f9', color: '#64748b' }} />
+            <input type="email" value={profile.email} readOnly disabled title="Email is the login, so it can't be changed here" style={{ ...inputStyle, backgroundColor: '#EDF0F2', color: '#5E6A76' }} />
           </div>
 
           <div>
@@ -50,8 +50,8 @@ export default function AdminEmployeeProfileModal({ userData, onClose, onSave })
           </div>
 
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '8px' }}>
-            <button type="button" onClick={onClose} style={{ ...declineBtnStyle, backgroundColor: '#cbd5e1' }}>Cancel</button>
-            <button type="submit" style={approveBtnStyle}>Save Changes 💾</button>
+            <button type="button" onClick={onClose} style={{ ...declineBtnStyle, backgroundColor: '#C9D1D8' }}>Cancel</button>
+            <button type="submit" style={approveBtnStyle}>Save Changes</button>
           </div>
         </form>
       </div>

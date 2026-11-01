@@ -89,12 +89,12 @@ export default function AdminUserRoleManagementView() {
 
   return (
     <div>
-      <h2 style={viewHeadingStyle}>👥 Employee Roster & Role Control</h2>
+      <h2 style={viewHeadingStyle}>Employee Roster & Role Control</h2>
       <p style={subTextStyle}>Admin Control: Inspect or update employee basic profile details and system roles.</p>
 
-      {msg && <div style={{ ...(msg.startsWith('❌') ? errorAlertStyle : successBannerStyle), marginBottom: '14px' }}>{msg}</div>}
+      {msg && <div style={{ ...(msg.startsWith('') ? errorAlertStyle : successBannerStyle), marginBottom: '14px' }}>{msg}</div>}
 
-      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#475569', marginBottom: '10px' }}>
+      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#4A5763', marginBottom: '10px' }}>
         <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
         Show deactivated staff
       </label>
@@ -102,7 +102,7 @@ export default function AdminUserRoleManagementView() {
       <div style={{ marginBottom: '14px', maxWidth: '400px' }}>
         <input
           type="text"
-          placeholder="🔍 Search employee by name, email, or dept..."
+          placeholder="Search employee by name, email, or dept..."
           value={searchTerm}
           onChange={(e) => setSearchFilter(e.target.value)}
           style={{ ...inputStyle, width: '100%' }}
@@ -111,14 +111,14 @@ export default function AdminUserRoleManagementView() {
 
       <div style={cardStyle}>
         {loading ? (
-          <div style={{ padding: '16px', color: '#64748b', fontSize: '12px' }}>Loading real profiles...</div>
+          <div style={{ padding: '16px', color: '#5E6A76', fontSize: '12px' }}>Loading real profiles...</div>
         ) : filteredUsers.length === 0 ? (
-          <div style={{ padding: '16px', color: '#94a3b8', fontSize: '12px' }}>No profile records found.</div>
+          <div style={{ padding: '16px', color: '#8B97A3', fontSize: '12px' }}>No profile records found.</div>
         ) : (
           <div style={responsiveTableWrapper}>
             <table style={{ width: '100%', minWidth: '480px', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
-                <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                <tr style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #D8DEE3', textAlign: 'left' }}>
                   <th style={{ padding: '8px' }}>Employee</th>
                   <th style={{ padding: '8px' }}>Email</th>
                   <th style={{ padding: '8px' }}>Dept</th>
@@ -130,20 +130,20 @@ export default function AdminUserRoleManagementView() {
                 {filteredUsers.map((u) => {
                   const normRole = String(u.role || 'user').toLowerCase().trim();
                   return (
-                    <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '8px', fontWeight: 'bold', color: '#2563eb', cursor: 'pointer', wordBreak: 'break-word' }} onClick={() => setSelectedUserModal(u)}>
+                    <tr key={u.id} style={{ borderBottom: '1px solid #EDF0F2' }}>
+                      <td style={{ padding: '8px', fontWeight: 'bold', color: '#2F5D7C', cursor: 'pointer', wordBreak: 'break-word' }} onClick={() => setSelectedUserModal(u)}>
                         {u.full_name || 'Unnamed'}
                         {u.active === false && (
                           <span style={{ marginLeft: '6px', padding: '2px 6px', borderRadius: '8px', fontSize: '9px', fontWeight: 'bold', backgroundColor: '#fee2e2', color: '#b91c1c' }}>INACTIVE</span>
                         )}
                       </td>
-                      <td style={{ padding: '8px', color: '#64748b', wordBreak: 'break-all' }}>{u.email}</td>
-                      <td style={{ padding: '8px', color: '#0f172a' }}>🏢 {u.department || 'Unassigned'}</td>
+                      <td style={{ padding: '8px', color: '#5E6A76', wordBreak: 'break-all' }}>{u.email}</td>
+                      <td style={{ padding: '8px', color: '#16212B' }}>{u.department || 'Unassigned'}</td>
                       <td style={{ padding: '8px' }}>
                         <span style={{
                           padding: '3px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 'bold',
-                          backgroundColor: normRole === 'manager' ? '#e0e7ff' : normRole === 'admin' ? '#f3e8ff' : '#dcfce7',
-                          color: normRole === 'manager' ? '#3730a3' : normRole === 'admin' ? '#7e22ce' : '#15803d',
+                          backgroundColor: normRole === 'manager' ? '#DCE8F0' : normRole === 'admin' ? '#f3e8ff' : '#dcfce7',
+                          color: normRole === 'manager' ? '#244A63' : normRole === 'admin' ? '#7e22ce' : '#15803d',
                           whiteSpace: 'nowrap'
                         }}>
                           {normRole.toUpperCase()}
@@ -152,7 +152,7 @@ export default function AdminUserRoleManagementView() {
                       <td style={{ padding: '8px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
                           <button onClick={() => setSelectedUserModal(u)} style={editBtnStyle}>
-                            👁️ View
+                            View
                           </button>
                           {normRole !== 'admin' && (
                             <button
@@ -160,7 +160,7 @@ export default function AdminUserRoleManagementView() {
                               disabled={busyId === u.id}
                               style={u.active === false ? approveBtnStyle : declineBtnStyle}
                             >
-                              {u.active === false ? '♻️ Reactivate' : '🚫 Deactivate'}
+                              {u.active === false ? 'Reactivate' : 'Deactivate'}
                             </button>
                           )}
                           {normRole === 'admin' || u.active === false ? null : normRole === 'manager' ? (

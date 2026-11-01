@@ -139,7 +139,7 @@ export default function WeeklyAvailability({ user }) {
         'save your availability',
         recordsToUpsert.length
       );
-      setMsg({ text: '💾 Availability saved successfully!', isError: false });
+      setMsg({ text: 'Availability saved successfully!', isError: false });
     } catch (err) {
       console.error(err);
       setMsg({ text: `❌ Save failed: ${err.message}`, isError: true });
@@ -156,14 +156,14 @@ export default function WeeklyAvailability({ user }) {
     <div style={{ maxWidth: '680px', margin: '0 auto', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
         <div>
-          <h2 style={{ margin: 0, color: '#0f172a', fontSize: '18px' }}>⏱️ My Weekly Availability</h2>
-          <p style={{ color: '#64748b', fontSize: '12px', margin: '2px 0 0 0' }}>
+          <h2 style={{ margin: 0, color: '#16212B', fontSize: '18px' }}>My Weekly Availability</h2>
+          <p style={{ color: '#5E6A76', fontSize: '12px', margin: '2px 0 0 0' }}>
             Set shift times or repeat settings into future weeks.
           </p>
         </div>
 
         <button type="button" onClick={handleSaveAvailability} disabled={saving} style={primaryBtnStyle}>
-          {saving ? 'Saving...' : '💾 Save Availability'}
+          {saving ? 'Saving...' : 'Save Availability'}
         </button>
       </div>
 
@@ -180,15 +180,15 @@ export default function WeeklyAvailability({ user }) {
 
       <div style={weekNavHeaderStyle}>
         <button type="button" onClick={() => changeWeek(-1)} style={weekNavBtnStyle}>◀ Prev</button>
-        <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#0f172a', textAlign: 'center' }}>
+        <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#16212B', textAlign: 'center' }}>
           {currentWeekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
         </div>
         <button type="button" onClick={() => changeWeek(1)} style={weekNavBtnStyle}>Next ▶</button>
       </div>
 
-      <div style={{ backgroundColor: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+      <div style={{ backgroundColor: '#F5F7F8', padding: '12px', borderRadius: '8px', border: '1px solid #D8DEE3' }}>
         {loading ? (
-          <div style={{ color: '#64748b', fontSize: '12px', padding: '12px', textAlign: 'center' }}>Loading availability settings...</div>
+          <div style={{ color: '#5E6A76', fontSize: '12px', padding: '12px', textAlign: 'center' }}>Loading availability settings...</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {DAYS.map(day => {
@@ -197,7 +197,7 @@ export default function WeeklyAvailability({ user }) {
               return (
                 <div key={day} style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '10px 12px', backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1',
+                  padding: '10px 12px', backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #C9D1D8',
                   flexWrap: 'wrap', gap: '8px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -211,22 +211,22 @@ export default function WeeklyAvailability({ user }) {
                         color: dayData.isAvailable ? '#15803d' : '#dc2626'
                       }}
                     >
-                      {dayData.isAvailable ? '✓ Available' : '✕ Unavailable'}
+                      {dayData.isAvailable ? 'Available' : 'Unavailable'}
                     </button>
 
-                    <span style={{ fontWeight: 'bold', fontSize: '14px', color: '#0f172a', minWidth: '80px' }}>{day}</span>
+                    <span style={{ fontWeight: 'bold', fontSize: '14px', color: '#16212B', minWidth: '80px' }}>{day}</span>
                   </div>
 
                   {dayData.isAvailable ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>From:</span>
+                      <span style={{ fontSize: '11px', color: '#5E6A76' }}>From:</span>
                       <input
                         type="time"
                         value={dayData.startTime || '08:30'}
                         onChange={(e) => handleTimeChange(day, 'startTime', e.target.value)}
                         style={timeInputStyle}
                       />
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>To:</span>
+                      <span style={{ fontSize: '11px', color: '#5E6A76' }}>To:</span>
                       <input
                         type="time"
                         value={dayData.endTime || '16:30'}
@@ -236,7 +236,7 @@ export default function WeeklyAvailability({ user }) {
                     </div>
                   ) : (
                     <span style={{ fontSize: '11px', color: '#dc2626', fontWeight: 'bold' }}>
-                      🔴 Unavailable
+                      Unavailable
                     </span>
                   )}
                 </div>
@@ -249,7 +249,7 @@ export default function WeeklyAvailability({ user }) {
   );
 }
 
-const primaryBtnStyle = { padding: '8px 14px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' };
-const weekNavHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: '#f1f5f9', borderRadius: '8px', marginBottom: '12px', border: '1px solid #cbd5e1', flexWrap: 'wrap', gap: '6px' };
-const weekNavBtnStyle = { padding: '5px 10px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' };
-const timeInputStyle = { padding: '4px 6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', fontWeight: 'bold', color: '#0f172a', outline: 'none' };
+const primaryBtnStyle = { padding: '8px 14px', backgroundColor: '#2F5D7C', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' };
+const weekNavHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: '#EDF0F2', borderRadius: '8px', marginBottom: '12px', border: '1px solid #C9D1D8', flexWrap: 'wrap', gap: '6px' };
+const weekNavBtnStyle = { padding: '5px 10px', backgroundColor: '#ffffff', border: '1px solid #C9D1D8', borderRadius: '6px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' };
+const timeInputStyle = { padding: '4px 6px', borderRadius: '6px', border: '1px solid #C9D1D8', fontSize: '12px', fontWeight: 'bold', color: '#16212B', outline: 'none' };

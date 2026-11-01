@@ -139,7 +139,7 @@ export default function PendingOffersView({ user }) {
       }
 
       setShiftOffers(prev => prev.filter(o => !(o.id === offer.id && o.source === offer.source)));
-      setMsg({ text: '🚫 Shift offer declined.', isError: false });
+      setMsg({ text: 'Shift offer declined.', isError: false });
     } catch (err) {
       console.error('Decline offer error:', err);
       setMsg({ text: `❌ Failed to decline shift: ${err.message}`, isError: true });
@@ -148,22 +148,22 @@ export default function PendingOffersView({ user }) {
 
   if (loading) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-        <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 'bold' }}>⌛ Checking shift offers...</div>
+      <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #D8DEE3' }}>
+        <div style={{ fontSize: '13px', color: '#5E6A76', fontWeight: 'bold' }}>⌛ Checking shift offers...</div>
       </div>
     );
   }
 
   return (
-    <div style={{ backgroundColor: '#ffffff', padding: '14px', borderRadius: '14px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+    <div style={{ backgroundColor: '#ffffff', padding: '14px', borderRadius: '8px', border: '1px solid #D8DEE3', }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
         <div>
-          <h3 style={{ margin: 0, fontSize: '16px', color: '#0f172a' }}>📬 Pending Shift Offers</h3>
-          <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#64748b' }}>
+          <h3 style={{ margin: 0, fontSize: '16px', color: '#16212B' }}>Pending Shift Offers</h3>
+          <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#5E6A76' }}>
             Review and accept open shifts offered by your manager.
           </p>
         </div>
-        <span style={{ backgroundColor: '#eff6ff', color: '#2563eb', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>
+        <span style={{ backgroundColor: '#E8F0F5', color: '#2F5D7C', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>
           {shiftOffers.length} {shiftOffers.length === 1 ? 'Available' : 'Available'}
         </span>
       </div>
@@ -179,10 +179,10 @@ export default function PendingOffersView({ user }) {
       )}
 
       {shiftOffers.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '24px 12px', border: '1px dashed #cbd5e1', borderRadius: '12px', backgroundColor: '#f8fafc' }}>
-          <div style={{ fontSize: '28px', marginBottom: '6px' }}>☕</div>
-          <h4 style={{ margin: 0, color: '#334155', fontSize: '14px' }}>No Pending Shift Offers</h4>
-          <p style={{ margin: '2px 0 0 0', color: '#94a3b8', fontSize: '11px' }}>
+        <div style={{ textAlign: 'center', padding: '24px 12px', border: '1px dashed #C9D1D8', borderRadius: '8px', backgroundColor: '#F5F7F8' }}>
+          <div style={{ fontSize: '28px', marginBottom: '6px' }}></div>
+          <h4 style={{ margin: 0, color: '#3A4753', fontSize: '14px' }}>No Pending Shift Offers</h4>
+          <p style={{ margin: '2px 0 0 0', color: '#8B97A3', fontSize: '11px' }}>
             You're all caught up! New shift invitations will appear here automatically.
           </p>
         </div>
@@ -193,30 +193,30 @@ export default function PendingOffersView({ user }) {
             const { dayName, formattedDate } = formatDayAndDate(rawDate);
 
             return (
-              <div key={offer.id} style={{ backgroundColor: '#ffffff', padding: '14px', borderRadius: '12px', border: '2px solid #3b82f6', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' }}>
+              <div key={offer.id} style={{ backgroundColor: '#ffffff', padding: '14px', borderRadius: '8px', border: '2px solid #3b82f6', }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                   <div>
-                    <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#0f172a' }}>
-                      📅 {dayName}
+                    <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#16212B' }}>
+                      {dayName}
                     </div>
-                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#5E6A76', marginTop: '2px' }}>
                       {formattedDate || rawDate}
                     </div>
                   </div>
-                  <span style={{ padding: '3px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 'bold', backgroundColor: '#dbeafe', color: '#1e40af' }}>
+                  <span style={{ padding: '3px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 'bold', backgroundColor: '#D7E5EE', color: '#1e40af' }}>
                     PENDING
                   </span>
                 </div>
 
-                <div style={{ backgroundColor: '#f8fafc', padding: '8px 10px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '10px' }}>
-                  <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Hours</div>
-                  <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#2563eb', marginTop: '2px' }}>
-                    ⏰ {offer.shift_time || '08:30 - 16:30'}
+                <div style={{ backgroundColor: '#F5F7F8', padding: '8px 10px', borderRadius: '8px', border: '1px solid #D8DEE3', marginBottom: '10px' }}>
+                  <div style={{ fontSize: '10px', color: '#5E6A76', fontWeight: 'bold', }}>Hours</div>
+                  <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#2F5D7C', marginTop: '2px' }}>
+                    {offer.shift_time || '08:30 - 16:30'}
                   </div>
                 </div>
 
-                <div style={{ fontSize: '11px', color: '#475569', marginBottom: '12px', wordBreak: 'break-word' }}>
-                  📍 <strong>Location:</strong> {offer.location || user.location || 'Not set'}
+                <div style={{ fontSize: '11px', color: '#4A5763', marginBottom: '12px', wordBreak: 'break-word' }}>
+                  <strong>Location:</strong> {offer.location || user.location || 'Not set'}
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -224,13 +224,13 @@ export default function PendingOffersView({ user }) {
                     onClick={() => handleAccept(offer)}
                     style={{ flex: 1, padding: '8px', backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
                   >
-                    ✓ Accept
+                    Accept
                   </button>
                   <button
                     onClick={() => handleDecline(offer)}
                     style={{ flex: 1, padding: '8px', backgroundColor: '#ffffff', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
                   >
-                    ✕ Decline
+                    Decline
                   </button>
                 </div>
               </div>

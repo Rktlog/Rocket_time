@@ -75,7 +75,7 @@ export default function UserProfileSettingsView({ user, role }) {
 
   return (
     <div>
-      <h2 style={viewHeadingStyle}>⚙️ {role} Account Profile & Settings</h2>
+      <h2 style={viewHeadingStyle}>{role} Account Profile & Settings</h2>
       <p style={subTextStyle}>Manage your personal contact details and password security.</p>
 
       {msg.text && (
@@ -94,7 +94,7 @@ export default function UserProfileSettingsView({ user, role }) {
             <h3 style={sectionHeadingStyle}>1. Personal & Contact Details</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '10px' }}>
               <div><label style={labelStyle}>Full Name</label><input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required style={inputStyle} /></div>
-              <div><label style={labelStyle}>Email Address</label><input type="email" value={email} disabled title="Email is your login and cannot be changed here" style={{ ...inputStyle, backgroundColor: '#f1f5f9' }} /></div>
+              <div><label style={labelStyle}>Email Address</label><input type="email" value={email} disabled title="Email is your login and cannot be changed here" style={{ ...inputStyle, backgroundColor: '#EDF0F2' }} /></div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
               <div><label style={labelStyle}>Address</label><input type="text" value={address} onChange={(e) => setAddress(e.target.value)} required style={inputStyle} /></div>
@@ -116,8 +116,8 @@ export default function UserProfileSettingsView({ user, role }) {
             </div>
           </div>
 
-          <button type="submit" disabled={saving} style={{ ...btnStyle('#2563eb'), marginTop: '4px' }}>
-            {saving ? 'Saving...' : 'Save Details 💾'}
+          <button type="submit" disabled={saving} style={{ ...btnStyle('#2F5D7C'), marginTop: '4px' }}>
+            {saving ? 'Saving...' : 'Save Details'}
           </button>
         </form>
       </div>

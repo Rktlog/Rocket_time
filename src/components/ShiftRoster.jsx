@@ -74,15 +74,15 @@ export default function ShiftRoster({ user }) {
   return (
     <div>
       <div style={{ marginBottom: '20px' }}>
-        <h2 style={{ margin: 0, fontSize: '22px', color: '#0f172a' }}>📅 My Shift Schedule</h2>
-        <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '13px' }}>
+        <h2 style={{ margin: 0, fontSize: '22px', color: '#16212B' }}>My Shift Schedule</h2>
+        <p style={{ margin: '4px 0 0 0', color: '#5E6A76', fontSize: '13px' }}>
           Your upcoming work assignments and accepted shift details for the week.
         </p>
       </div>
 
       <div style={weekNavHeaderStyle}>
         <button onClick={() => changeWeek(-1)} style={weekNavBtnStyle}>◀ Prev Week</button>
-        <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>
+        <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#16212B' }}>
           Week of {currentWeekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
         </div>
         <button onClick={() => changeWeek(1)} style={weekNavBtnStyle}>Next Week ▶</button>
@@ -92,9 +92,9 @@ export default function ShiftRoster({ user }) {
         <div style={emptyCardStyle}>Loading your shift schedule...</div>
       ) : shifts.length === 0 ? (
         <div style={emptyCardStyle}>
-          <div style={{ fontSize: '36px', marginBottom: '8px' }}>☕</div>
-          <h3 style={{ margin: 0, color: '#334155' }}>No Shifts Scheduled This Week</h3>
-          <p style={{ margin: '4px 0 0 0', color: '#94a3b8', fontSize: '13px' }}>
+          <div style={{ fontSize: '36px', marginBottom: '8px' }}></div>
+          <h3 style={{ margin: 0, color: '#3A4753' }}>No Shifts Scheduled This Week</h3>
+          <p style={{ margin: '4px 0 0 0', color: '#8B97A3', fontSize: '13px' }}>
             Accepted shift offers and assigned rosters will automatically appear here.
           </p>
         </div>
@@ -112,15 +112,15 @@ export default function ShiftRoster({ user }) {
               <div key={dateStr} style={shiftCardStyle}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                   <div>
-                    <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#0f172a' }}>{dayName}</span>
-                    <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '8px' }}>
+                    <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#16212B' }}>{dayName}</span>
+                    <span style={{ fontSize: '12px', color: '#5E6A76', marginLeft: '8px' }}>
                       {dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </span>
                   </div>
 
                   <span style={{
-                    padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold',
-                    backgroundColor: dayShift.status === 'Accepted' ? '#dcfce7' : '#dbeafe',
+                    padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold',
+                    backgroundColor: dayShift.status === 'Accepted' ? '#dcfce7' : '#D7E5EE',
                     color: dayShift.status === 'Accepted' ? '#15803d' : '#1e40af'
                   }}>
                     {dayShift.status ? dayShift.status.toUpperCase() : 'CONFIRMED'}
@@ -128,14 +128,14 @@ export default function ShiftRoster({ user }) {
                 </div>
 
                 <div style={timingBoxStyle}>
-                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Shift Hours</div>
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#2563eb', marginTop: '2px' }}>
-                    ⏰ {formatTimeString(dayShift.start_time)} – {formatTimeString(dayShift.end_time)}
+                  <div style={{ fontSize: '12px', color: '#5E6A76', fontWeight: 'bold', }}>Shift Hours</div>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#2F5D7C', marginTop: '2px' }}>
+                    {formatTimeString(dayShift.start_time)} – {formatTimeString(dayShift.end_time)}
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#475569', marginTop: '12px' }}>
-                  <span>📍 <strong>Site Location:</strong> {dayShift.location || user?.location || 'Site not set'}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#4A5763', marginTop: '12px' }}>
+                  <span><strong>Site Location:</strong> {dayShift.location || user?.location || 'Site not set'}</span>
                 </div>
               </div>
             );
@@ -147,9 +147,9 @@ export default function ShiftRoster({ user }) {
 }
 
 // Inline Styles
-const weekNavHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', backgroundColor: '#f1f5f9', borderRadius: '12px', marginBottom: '20px', border: '1px solid #cbd5e1' };
-const weekNavBtnStyle = { padding: '8px 14px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', color: '#334155' };
-const emptyCardStyle = { backgroundColor: '#ffffff', padding: '40px', borderRadius: '14px', border: '1px dashed #cbd5e1', textAlign: 'center' };
+const weekNavHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', backgroundColor: '#EDF0F2', borderRadius: '8px', marginBottom: '20px', border: '1px solid #C9D1D8' };
+const weekNavBtnStyle = { padding: '8px 14px', backgroundColor: '#ffffff', border: '1px solid #C9D1D8', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', color: '#3A4753' };
+const emptyCardStyle = { backgroundColor: '#ffffff', padding: '40px', borderRadius: '8px', border: '1px dashed #C9D1D8', textAlign: 'center' };
 
-const shiftCardStyle = { backgroundColor: '#ffffff', padding: '20px', borderRadius: '14px', border: '2px solid #bfdbfe', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' };
-const timingBoxStyle = { backgroundColor: '#f8fafc', padding: '12px 14px', borderRadius: '10px', border: '1px solid #e2e8f0' };
+const shiftCardStyle = { backgroundColor: '#ffffff', padding: '20px', borderRadius: '8px', border: '2px solid #bfdbfe', };
+const timingBoxStyle = { backgroundColor: '#F5F7F8', padding: '12px 14px', borderRadius: '10px', border: '1px solid #D8DEE3' };
